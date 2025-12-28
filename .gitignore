@@ -1,0 +1,17 @@
+# Rust build output
+target/
+
+# macOS Finder metadata
+.DS_Store
+
+# Editor/IDE settings
+.vscode/
+.idea/
+
+# Vim/Swap/Backup files
+*.swp
+*.swo
+*~
+
+# Local env files
+.env
