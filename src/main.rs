@@ -53,7 +53,7 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
         return Err("bd: pwd is not a directory".to_string());
     }
 
-    let conn = open_db()?;
+    let mut conn = open_db()?;
     let tx = conn
         .transaction()
         .map_err(|e| format!("bd: db error: {e}"))?;
@@ -128,7 +128,7 @@ fn cmd_back(session: &str, n: u32) -> Result<(), String> {
         return Err(format!("bd: max is {BD_MAX_BACK}"));
     }
 
-    let conn = open_db()?;
+    let mut conn = open_db()?;
     let tx = conn
         .transaction()
         .map_err(|e| format!("bd: db error: {e}"))?;
@@ -168,38 +168,40 @@ fn cmd_back(session: &str, n: u32) -> Result<(), String> {
         cursor_id = latest_id.ok_or_else(|| "bd: no earlier directory".to_string())?;
     }
 
-    let mut stmt = tx
-        .prepare("SELECT id, path FROM events WHERE id < ?1 ORDER BY id DESC")
-        .map_err(|e| format!("bd: db error: {e}"))?;
+    let (target_id, target_path, actual_steps) = {
+        let mut stmt = tx
+            .prepare("SELECT id, path FROM events WHERE id < ?1 ORDER BY id DESC")
+            .map_err(|e| format!("bd: db error: {e}"))?;
 
-    let mut rows = stmt
-        .query(params![cursor_id])
-        .map_err(|e| format!("bd: db error: {e}"))?;
+        let mut rows = stmt
+            .query(params![cursor_id])
+            .map_err(|e| format!("bd: db error: {e}"))?;
 
-    let mut steps: u32 = 0;
-    let mut target: Option<(i64, String, u32)> = None;
-    let mut oldest_existing: Option<(i64, String, u32)> = None;
+        let mut steps: u32 = 0;
+        let mut target: Option<(i64, String, u32)> = None;
+        let mut oldest_existing: Option<(i64, String, u32)> = None;
 
-    while let Some(row) = rows
-        .next()
-        .map_err(|e| format!("bd: db error: {e}"))?
-    {
-        let id: i64 = row.get(0).map_err(|e| format!("bd: db error: {e}"))?;
-        let path: String = row.get(1).map_err(|e| format!("bd: db error: {e}"))?;
-        steps += 1;
+        while let Some(row) = rows
+            .next()
+            .map_err(|e| format!("bd: db error: {e}"))?
+        {
+            let id: i64 = row.get(0).map_err(|e| format!("bd: db error: {e}"))?;
+            let path: String = row.get(1).map_err(|e| format!("bd: db error: {e}"))?;
+            steps += 1;
 
-        if Path::new(&path).is_dir() {
-            oldest_existing = Some((id, path.clone(), steps));
-            if steps >= n {
-                target = Some((id, path, steps));
-                break;
+            if Path::new(&path).is_dir() {
+                oldest_existing = Some((id, path.clone(), steps));
+                if steps >= n {
+                    target = Some((id, path, steps));
+                    break;
+                }
             }
         }
-    }
 
-    let (target_id, target_path, actual_steps) = match target.or(oldest_existing) {
-        Some(value) => value,
-        None => return Err("bd: no earlier directory".to_string()),
+        match target.or(oldest_existing) {
+            Some(value) => value,
+            None => return Err("bd: no earlier directory".to_string()),
+        }
     };
 
     tx.execute(
@@ -223,7 +225,7 @@ fn cmd_back(session: &str, n: u32) -> Result<(), String> {
 }
 
 fn cmd_cancel(session: &str) -> Result<(), String> {
-    let conn = open_db()?;
+    let mut conn = open_db()?;
     let tx = conn
         .transaction()
         .map_err(|e| format!("bd: db error: {e}"))?;
