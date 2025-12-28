@@ -13,6 +13,7 @@ BD_LAST_BD_FILE="$BD_STATE_DIR/last_bd"
 BD_LAST_BD_ARMED_FILE="$BD_STATE_DIR/last_bd_armed"
 BD_LAST_BD_TOKEN_FILE="$BD_STATE_DIR/last_bd_token"
 BD_LAST_CMD_FILE="$BD_STATE_DIR/last_cmd"
+BD_MAX_BACK=99
 
 _bd_mkdir_state() {
   emulate -L zsh
@@ -354,6 +355,11 @@ bd() {
 
   if [[ $arg != <-> || $arg -le 0 ]]; then
     print -r -- "bd: usage: bd [N|c]"
+    return 1
+  fi
+
+  if (( arg > BD_MAX_BACK )); then
+    print -r -- "bd: max is $BD_MAX_BACK"
     return 1
   fi
 

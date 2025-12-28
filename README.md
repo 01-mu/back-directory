@@ -14,7 +14,7 @@ echo 'source ~/.bd.zsh' >> ~/.zshrc
 
 ```zsh
 bd       # same as: bd 1
-bd 3     # go back 3 directories
+bd 3     # go back 3 directories (1 <= N <= 99)
 bd c     # cancel the last bd command (only if the previous command was bd ...)
 ```
 
