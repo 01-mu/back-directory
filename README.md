@@ -5,9 +5,9 @@ A tiny zsh utility to jump back through directory history, with a single-step ca
 ## Install
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/bd.zsh -o ~/.zsh/bd.zsh
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/bd.zsh -o ~/.bd.zsh
 
-echo 'source ~/.zsh/bd.zsh' >> ~/.zshrc
+echo 'source ~/.bd.zsh' >> ~/.zshrc
 ```
 
 ## Usage
