@@ -4,7 +4,35 @@ A zsh wrapper plus a Rust core for fast, correct directory backtracking with a s
 
 ## Install
 
-1) Install the Rust core (`bd-core`):
+### Recommended: one-liner (GitHub Releases)
+
+```zsh
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/install.sh | sh
+```
+
+This installs `bd-core` to `~/.local/bin/bd-core` (creates `~/.local/bin` if needed).
+If `~/.local/bin` is not on your `PATH`, add this to your shell config:
+
+```zsh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### Manual: download from Releases
+
+1) Download the matching `.tar.gz` for your OS/arch from the latest GitHub Release:
+   - `bd-core-aarch64-apple-darwin.tar.gz`
+   - `bd-core-x86_64-apple-darwin.tar.gz`
+   - `bd-core-x86_64-unknown-linux-gnu.tar.gz`
+
+2) Extract and install:
+
+```zsh
+mkdir -p ~/.local/bin
+tar -xzf bd-core-<target>.tar.gz
+mv bd-core ~/.local/bin/bd-core
+```
+
+### Developer install (cargo)
 
 ```zsh
 # from a local clone
@@ -16,7 +44,9 @@ cargo install --path .
 
 Ensure `bd-core` is on your `PATH` (default is `~/.cargo/bin`).
 
-2) Install the zsh wrapper:
+### Install the zsh wrapper
+
+After `bd-core` is installed, add the wrapper:
 
 ```zsh
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/bd.zsh -o ~/.bd.zsh
