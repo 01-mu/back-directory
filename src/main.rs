@@ -115,8 +115,7 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
-    tx.commit()
-        .map_err(|e| format!("bd: db error: {e}"))?;
+    tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
     Ok(())
 }
 
@@ -181,10 +180,7 @@ fn cmd_back(session: &str, n: u32) -> Result<(), String> {
         let mut target: Option<(i64, String, u32)> = None;
         let mut oldest_existing: Option<(i64, String, u32)> = None;
 
-        while let Some(row) = rows
-            .next()
-            .map_err(|e| format!("bd: db error: {e}"))?
-        {
+        while let Some(row) = rows.next().map_err(|e| format!("bd: db error: {e}"))? {
             let id: i64 = row.get(0).map_err(|e| format!("bd: db error: {e}"))?;
             let path: String = row.get(1).map_err(|e| format!("bd: db error: {e}"))?;
             steps += 1;
@@ -217,8 +213,7 @@ fn cmd_back(session: &str, n: u32) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
-    tx.commit()
-        .map_err(|e| format!("bd: db error: {e}"))?;
+    tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
 
     println!("{target_path}");
     Ok(())
@@ -269,8 +264,7 @@ fn cmd_cancel(session: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
-    tx.commit()
-        .map_err(|e| format!("bd: db error: {e}"))?;
+    tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
 
     let _ = cursor_id;
     println!("{target_path}");
@@ -280,8 +274,7 @@ fn cmd_cancel(session: &str) -> Result<(), String> {
 fn open_db() -> Result<Connection, String> {
     let path = db_path()?;
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| format!("bd: db error: {e}"))?;
+        std::fs::create_dir_all(parent).map_err(|e| format!("bd: db error: {e}"))?;
     }
 
     let conn = Connection::open(path).map_err(|e| format!("bd: db error: {e}"))?;
@@ -311,7 +304,9 @@ fn open_db() -> Result<Connection, String> {
 
 fn db_path() -> Result<PathBuf, String> {
     if let Ok(state_home) = env::var("XDG_STATE_HOME") {
-        return Ok(PathBuf::from(state_home).join("back-directory").join("bd.sqlite3"));
+        return Ok(PathBuf::from(state_home)
+            .join("back-directory")
+            .join("bd.sqlite3"));
     }
 
     let home = env::var("HOME").map_err(|_| "bd: HOME not set".to_string())?;
