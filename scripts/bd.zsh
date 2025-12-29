@@ -52,6 +52,10 @@ fi
 BD_SESSION_ID=${BD_SESSION_ID:-$(_bd_compute_session_id)}
 BD_SESSION_KEY=${BD_SESSION_KEY:-$BD_SESSION_ID}
 
+if [[ -z ${chpwd_functions-} ]]; then
+  typeset -ga chpwd_functions
+fi
+
 _bd_require_core() {
   emulate -L zsh
   if [[ -x $BD_CORE_BIN ]]; then
