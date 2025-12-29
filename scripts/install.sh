@@ -3,9 +3,11 @@ set -eu
 
 REPO="01-mu/back-directory"
 BIN_NAME="bd-core"
-INSTALL_DIR="$HOME/.local/bin"
-WRAPPER_DEST="$HOME/.bd.zsh"
+BIN_DIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
+CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/back-directory"
+ZSH_FILE="$CFG_DIR/bd.zsh"
 ZSHRC="${ZSHRC:-$HOME/.zshrc}"
+LEGACY_WRAPPER="$HOME/.bd.zsh"
 
 uname_s="$(uname -s)"
 uname_m="$(uname -m)"
@@ -44,7 +46,8 @@ wrapper_url="https://raw.githubusercontent.com/$REPO/main/scripts/bd.zsh"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
-mkdir -p "$INSTALL_DIR"
+mkdir -p "$BIN_DIR"
+mkdir -p "$CFG_DIR"
 
 curl -fsSL "$url" -o "$tmpdir/$archive"
 
@@ -55,18 +58,32 @@ if [ ! -f "$tmpdir/$BIN_NAME" ]; then
   exit 1
 fi
 
-install -m 0755 "$tmpdir/$BIN_NAME" "$INSTALL_DIR/$BIN_NAME"
+install -m 0755 "$tmpdir/$BIN_NAME" "$BIN_DIR/$BIN_NAME"
 
-curl -fsSL "$wrapper_url" -o "$WRAPPER_DEST"
+curl -fsSL "$wrapper_url" -o "$ZSH_FILE"
 
-if [ -f "$ZSHRC" ]; then
-  if ! grep -q 'source ~/.bd.zsh' "$ZSHRC"; then
-    printf '\nsource ~/.bd.zsh\n' >> "$ZSHRC"
+if [ -f "$LEGACY_WRAPPER" ]; then
+  if grep -q "back-directory (bd) - zsh wrapper" "$LEGACY_WRAPPER"; then
+    cat > "$LEGACY_WRAPPER" <<'EOF'
+# back-directory (bd) - legacy shim
+source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh"
+EOF
+    echo "Updated legacy wrapper at $LEGACY_WRAPPER"
+  else
+    echo "Found existing $LEGACY_WRAPPER; leaving it untouched."
   fi
-else
-  printf 'source ~/.bd.zsh\n' >> "$ZSHRC"
 fi
 
-echo "Installed core binary to $INSTALL_DIR/$BIN_NAME"
-echo "Installed wrapper to $WRAPPER_DEST"
+canonical_source='source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh"'
+
+if [ -f "$ZSHRC" ]; then
+  if ! grep -Eq '^[[:space:]]*[^#].*source[[:space:]]+.*back-directory/bd\.zsh' "$ZSHRC"; then
+    printf '\n%s\n' "$canonical_source" >> "$ZSHRC"
+  fi
+else
+  printf '%s\n' "$canonical_source" >> "$ZSHRC"
+fi
+
+echo "Installed core binary to $BIN_DIR/$BIN_NAME"
+echo "Installed wrapper to $ZSH_FILE"
 echo "Added wrapper to $ZSHRC (start a new shell or source it)"

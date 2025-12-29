@@ -26,6 +26,8 @@ enum Commands {
         session: String,
         #[arg(long)]
         n: u32,
+        #[arg(long)]
+        print_path: bool,
     },
     Cancel {
         #[arg(long)]
@@ -37,7 +39,11 @@ fn main() {
     let cli = Cli::parse();
     let result = match cli.command {
         Commands::Record { session, pwd } => cmd_record(&session, &pwd),
-        Commands::Back { session, n } => cmd_back(&session, n),
+        Commands::Back {
+            session,
+            n,
+            print_path,
+        } => cmd_back(&session, n, print_path),
         Commands::Cancel { session } => cmd_cancel(&session),
     };
 
@@ -115,11 +121,12 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
+    rotate_events(&tx)?;
     tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
     Ok(())
 }
 
-fn cmd_back(session: &str, n: u32) -> Result<(), String> {
+fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
     if n == 0 {
         return Err("bd: usage: bd [N|c]".to_string());
     }
@@ -302,19 +309,63 @@ fn open_db() -> Result<Connection, String> {
     Ok(conn)
 }
 
-fn db_path() -> Result<PathBuf, String> {
+fn xdg_state_dir() -> Result<PathBuf, String> {
     if let Ok(state_home) = env::var("XDG_STATE_HOME") {
-        return Ok(PathBuf::from(state_home)
-            .join("back-directory")
-            .join("bd.sqlite3"));
+        return Ok(PathBuf::from(state_home).join("back-directory"));
     }
 
     let home = env::var("HOME").map_err(|_| "bd: HOME not set".to_string())?;
     Ok(PathBuf::from(home)
         .join(".local")
         .join("state")
-        .join("back-directory")
-        .join("bd.sqlite3"))
+        .join("back-directory"))
+}
+
+fn db_path() -> Result<PathBuf, String> {
+    Ok(xdg_state_dir()?.join("bd.sqlite3"))
+}
+
+fn rotate_events(tx: &rusqlite::Transaction<'_>) -> Result<(), String> {
+    let min_session_cursor_id: Option<i64> = tx
+        .query_row(
+            "SELECT MIN(val) FROM (
+               SELECT cursor_id AS val FROM sessions WHERE cursor_id != 0
+               UNION ALL
+               SELECT last_bd_from_id FROM sessions WHERE last_bd_from_id != 0
+               UNION ALL
+               SELECT last_bd_to_id FROM sessions WHERE last_bd_to_id != 0
+             )",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let rotation_cutoff_id: Option<i64> = tx
+        .query_row(
+            "SELECT id FROM events ORDER BY id DESC LIMIT 1 OFFSET 9999",
+            [],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let (rotation_cutoff_id, min_session_cursor_id) =
+        match (rotation_cutoff_id, min_session_cursor_id) {
+            (Some(rotation_cutoff_id), Some(min_session_cursor_id)) => {
+                (rotation_cutoff_id, min_session_cursor_id)
+            }
+            _ => return Ok(()),
+        };
+
+    let delete_before = rotation_cutoff_id.min(min_session_cursor_id);
+    if delete_before <= 0 {
+        return Ok(());
+    }
+
+    tx.execute("DELETE FROM events WHERE id < ?1", params![delete_before])
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    Ok(())
 }
 
 fn current_ts() -> i64 {

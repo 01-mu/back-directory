@@ -15,8 +15,9 @@ _bd_default_core_bin() {
     print -r -- "$bin"
     return 0
   fi
-  if [[ -x "$HOME/.local/bin/bd-core" ]]; then
-    print -r -- "$HOME/.local/bin/bd-core"
+  local bin_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
+  if [[ -x "$bin_dir/bd-core" ]]; then
+    print -r -- "$bin_dir/bd-core"
     return 0
   fi
   print -r -- "bd-core"
@@ -33,7 +34,7 @@ _bd_sanitize_session_key() {
   print -r -- "$key"
 }
 
-_bd_compute_session_key() {
+_bd_compute_session_id() {
   emulate -L zsh
   local key
   if [[ -n ${TTY-} ]]; then
@@ -44,7 +45,12 @@ _bd_compute_session_key() {
   _bd_sanitize_session_key "$key"
 }
 
-BD_SESSION_KEY=${BD_SESSION_KEY:-$(_bd_compute_session_key)}
+if [[ -z ${BD_SESSION_ID-} && -n ${BD_SESSION_KEY-} ]]; then
+  BD_SESSION_ID="$BD_SESSION_KEY"
+fi
+
+BD_SESSION_ID=${BD_SESSION_ID:-$(_bd_compute_session_id)}
+BD_SESSION_KEY=${BD_SESSION_KEY:-$BD_SESSION_ID}
 
 _bd_require_core() {
   emulate -L zsh
@@ -61,7 +67,7 @@ _bd_require_core() {
 _bd_record() {
   emulate -L zsh
   _bd_require_core || return 1
-  "$BD_CORE_BIN" record --session "$BD_SESSION_KEY" --pwd "$PWD"
+  "$BD_CORE_BIN" record --session "$BD_SESSION_ID" --pwd "$PWD"
 }
 
 back_directory_chpwd() {
@@ -84,7 +90,7 @@ bd() {
   if [[ $arg == "c" || $arg == "cancel" ]]; then
     _bd_require_core || return 1
     local target
-    target=$("$BD_CORE_BIN" cancel --session "$BD_SESSION_KEY") || return $?
+    target=$("$BD_CORE_BIN" cancel --session "$BD_SESSION_ID") || return $?
     BD_SUPPRESS_RECORD=1
     builtin cd -- "$target"
     return $?
@@ -107,7 +113,7 @@ bd() {
 
   _bd_require_core || return 1
   local target
-  target=$("$BD_CORE_BIN" back --session "$BD_SESSION_KEY" --n "$arg") || return $?
+  target=$("$BD_CORE_BIN" back --print-path --session "$BD_SESSION_ID" --n "$arg") || return $?
   BD_SUPPRESS_RECORD=1
   builtin cd -- "$target"
 }

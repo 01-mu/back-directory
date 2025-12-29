@@ -14,9 +14,10 @@ A zsh wrapper plus a Rust core for fast, correct directory backtracking with a s
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh | sh
 ```
 
-This installs the core binary to `~/.local/bin` (creates `~/.local/bin` if needed),
-installs the wrapper to `~/.bd.zsh`, and adds it to `~/.zshrc`.
-If `~/.local/bin` is not on your `PATH`, add this to your shell config:
+This installs the core binary to `${XDG_BIN_HOME:-$HOME/.local/bin}` (creates it if needed),
+installs the wrapper to `${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh`, and adds
+`source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh"` to your `.zshrc`.
+If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on your `PATH`, add this to your shell config:
 
 ```zsh
 export PATH="$HOME/.local/bin:$PATH"
@@ -71,6 +72,14 @@ Optional alias:
 
 ```zsh
 bd cancel
+```
+
+Session semantics: `bd` tracks history per session key. By default this is derived from
+your terminal TTY, so a new terminal tab/window is a new session, while new shells in the
+same tab share history. Set `BD_SESSION_ID` before sourcing if you want to override:
+
+```zsh
+export BD_SESSION_ID=work-logs
 ```
 
 ## Developer guide
