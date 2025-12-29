@@ -11,10 +11,11 @@ A zsh wrapper plus a Rust core for fast, correct directory backtracking with a s
 #### Recommended: one-liner (GitHub Releases)
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh | sh
 ```
 
-This installs the core binary to `~/.local/bin` (creates `~/.local/bin` if needed).
+This installs the core binary to `~/.local/bin` (creates `~/.local/bin` if needed),
+installs the wrapper to `~/.bd.zsh`, and adds it to `~/.zshrc`.
 If `~/.local/bin` is not on your `PATH`, add this to your shell config:
 
 ```zsh
@@ -48,15 +49,7 @@ cargo install --path .
 
 Ensure `bd-core` is on your `PATH` (default is `~/.cargo/bin`).
 
-#### Install the zsh wrapper
-
-After the core binary is installed, add the wrapper:
-
-```zsh
-curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/bd.zsh -o ~/.bd.zsh
-
-echo 'source ~/.bd.zsh' >> ~/.zshrc
-```
+#### Wrapper configuration
 
 Start a new shell or `source ~/.zshrc`.
 
@@ -86,5 +79,5 @@ See `docs/development.md` for implementation details and development workflow.
 
 ## Layout
 
-- dist/: distribution scripts (install.sh, bd.zsh)
+- scripts/: distribution scripts (install.sh, bd.zsh)
 - src/: Rust implementation (bd-core)

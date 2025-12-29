@@ -10,25 +10,18 @@ English: [README.md](README.md)
 ### 推奨: ワンライナー (GitHub Releases)
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh | sh
 ```
 
-これはコアバイナリを `~/.local/bin` にインストールします（`~/.local/bin` が無ければ作成）。
+これはコアバイナリを `~/.local/bin` にインストールし（`~/.local/bin` が無ければ作成）、
+ラッパーを `~/.bd.zsh` に配置して `~/.zshrc` に追記します。
 `~/.local/bin` が `PATH` に無い場合は、シェル設定に追加してください。
 
 ```zsh
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-### zshラッパーの導入
-
-コアバイナリを導入後、ラッパーを追加します。
-
-```zsh
-curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/bd.zsh -o ~/.bd.zsh
-
-echo 'source ~/.bd.zsh' >> ~/.zshrc
-```
+### ラッパーの読み込み
 
 新しいシェルを開くか `source ~/.zshrc` を実行してください。
 
