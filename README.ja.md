@@ -13,7 +13,7 @@ English: [README.md](README.md)
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/install.sh | sh
 ```
 
-これは `bd-core` を `~/.local/bin/bd-core` にインストールします（`~/.local/bin` が無ければ作成）。
+これはコアバイナリを `~/.local/bin` にインストールします（`~/.local/bin` が無ければ作成）。
 `~/.local/bin` が `PATH` に無い場合は、シェル設定に追加してください。
 
 ```zsh
@@ -22,7 +22,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ### zshラッパーの導入
 
-`bd-core` を導入後、ラッパーを追加します。
+コアバイナリを導入後、ラッパーを追加します。
 
 ```zsh
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/bd.zsh -o ~/.bd.zsh
@@ -32,7 +32,7 @@ echo 'source ~/.bd.zsh' >> ~/.zshrc
 
 新しいシェルを開くか `source ~/.zshrc` を実行してください。
 
-`bd-core` の場所が別なら、読み込み前に `BD_CORE_BIN` を指定します。
+コアバイナリの場所が別なら、読み込み前に `BD_CORE_BIN` を指定します。
 
 ```zsh
 export BD_CORE_BIN=/path/to/bd-core

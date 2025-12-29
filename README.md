@@ -14,7 +14,7 @@ A zsh wrapper plus a Rust core for fast, correct directory backtracking with a s
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/install.sh | sh
 ```
 
-This installs `bd-core` to `~/.local/bin/bd-core` (creates `~/.local/bin` if needed).
+This installs the core binary to `~/.local/bin` (creates `~/.local/bin` if needed).
 If `~/.local/bin` is not on your `PATH`, add this to your shell config:
 
 ```zsh
@@ -50,7 +50,7 @@ Ensure `bd-core` is on your `PATH` (default is `~/.cargo/bin`).
 
 #### Install the zsh wrapper
 
-After `bd-core` is installed, add the wrapper:
+After the core binary is installed, add the wrapper:
 
 ```zsh
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/bd.zsh -o ~/.bd.zsh
@@ -60,7 +60,7 @@ echo 'source ~/.bd.zsh' >> ~/.zshrc
 
 Start a new shell or `source ~/.zshrc`.
 
-If `bd-core` lives elsewhere, set `BD_CORE_BIN` before sourcing:
+If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 
 ```zsh
 export BD_CORE_BIN=/path/to/bd-core
