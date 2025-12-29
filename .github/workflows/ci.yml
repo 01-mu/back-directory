@@ -38,3 +38,6 @@ jobs:
 
       - name: Build (release)
         run: cargo build --release
+
+      - name: E2E smoke (wrapper + core)
+        run: scripts/e2e-smoke.sh
