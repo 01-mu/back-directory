@@ -2,12 +2,14 @@
 
 A zsh wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
 
-## Install
+## User guide
 
-### Recommended: one-liner (GitHub Releases)
+### Install
+
+#### Recommended: one-liner (GitHub Releases)
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/install.sh | sh
 ```
 
 This installs `bd-core` to `~/.local/bin/bd-core` (creates `~/.local/bin` if needed).
@@ -17,7 +19,7 @@ If `~/.local/bin` is not on your `PATH`, add this to your shell config:
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-### Manual: download from Releases
+#### Manual: download from Releases
 
 1) Download the matching `.tar.gz` for your OS/arch from the latest GitHub Release:
    - `bd-core-aarch64-apple-darwin.tar.gz`
@@ -32,7 +34,7 @@ tar -xzf bd-core-<target>.tar.gz
 mv bd-core ~/.local/bin/bd-core
 ```
 
-### Developer install (cargo)
+#### Developer install (cargo)
 
 ```zsh
 # from a local clone
@@ -44,12 +46,12 @@ cargo install --path .
 
 Ensure `bd-core` is on your `PATH` (default is `~/.cargo/bin`).
 
-### Install the zsh wrapper
+#### Install the zsh wrapper
 
 After `bd-core` is installed, add the wrapper:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/bd.zsh -o ~/.bd.zsh
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/dist/bd.zsh -o ~/.bd.zsh
 
 echo 'source ~/.bd.zsh' >> ~/.zshrc
 ```
@@ -62,7 +64,7 @@ If `bd-core` lives elsewhere, set `BD_CORE_BIN` before sourcing:
 export BD_CORE_BIN=/path/to/bd-core
 ```
 
-## Usage
+### Usage
 
 ```zsh
 bd       # same as: bd 1
@@ -76,33 +78,11 @@ Optional alias:
 bd cancel
 ```
 
-## How it works
+## Developer guide
 
-`bd` is the user command provided by the zsh wrapper. The wrapper installs lightweight
-hooks, validates arguments, and calls the Rust binary `bd-core`. `bd-core` stores and
-queries history in SQLite, computes the target path (including cancel behavior), and
-returns it to the wrapper, which then runs `builtin cd`.
+See `docs/development.md` for implementation details and development workflow.
 
-We avoid heavy logic in zsh because the original pure-zsh version was slow and unreliable
-under frequent directory changes and in multi-shell use. The Rust core centralizes state
-management, enforces the `1..99` constraint, and keeps per-session cursor/cancel state
-while sharing history across shells. History is shared, but each shell keeps its own
-cursor so `bd` moves by directory-change events rather than lines of history. The wrapper
-stays minimal to avoid conflicts with other shell hooks like auto-`ls`.
+## Layout
 
-## Development / CI
-
-CI runs on pull requests and pushes to `main`. The recommended local check is:
-
-```zsh
-cargo fmt --check && cargo clippy -- -D warnings && cargo test && cargo build --release
-```
-
-To keep `main` healthy, enable branch protection and require the `ci / build-test` job
-to pass before merging.
-
-## Notes
-
-- State lives in `~/.local/state/back-directory/bd.sqlite3` (or `$XDG_STATE_HOME`).
-- History is shared across shells, but each session has its own cursor and cancel state.
-- Directory changes are captured via `chpwd`; no `cd` wrapper or per-prompt writes.
+- dist/: distribution scripts (install.sh, bd.zsh)
+- src/: Rust implementation (bd-core)
