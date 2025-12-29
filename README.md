@@ -2,6 +2,8 @@
 
 A zsh wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
 
+日本語: [README.ja.md](README.ja.md)
+
 ## User guide
 
 ### Install
