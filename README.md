@@ -6,6 +6,8 @@ A zsh wrapper plus a Rust core for fast, correct directory backtracking with a s
 
 ### Install
 
+If you're not sure, use the one-liner. The other options are for advanced users.
+
 #### Recommended: one-liner (GitHub Releases)
 
 ```zsh
