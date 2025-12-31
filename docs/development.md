@@ -26,6 +26,45 @@ cargo fmt --check && cargo clippy -- -D warnings && cargo test && cargo build --
 To keep `main` healthy, enable branch protection and require the `ci / build-test` job
 to pass before merging.
 
+## Developer install (cargo)
+
+```zsh
+# from a local clone
+cargo install --path .
+
+# or from git
+# cargo install --git https://github.com/01-mu/back-directory
+```
+
+Ensure `bd-core` is on your `PATH` (default is `~/.cargo/bin`).
+
+## Debugging from a local clone
+
+If you want to run the wrapper from this repo while iterating on the core:
+
+```zsh
+# from a local clone
+cargo install --path . --force
+
+# use the wrapper from this repo
+mkdir -p ~/.config/back-directory
+cp ./scripts/bd.zsh ~/.config/back-directory/bd.zsh
+cp ./scripts/bd.bash ~/.config/back-directory/bd.bash
+# zsh
+source ~/.config/back-directory/bd.zsh
+# bash
+# source ~/.config/back-directory/bd.bash
+```
+
+If you prefer not to copy the wrapper, you can source it directly:
+
+```zsh
+export BD_CORE_BIN="$HOME/.cargo/bin/bd-core"
+source /path/to/your/clone/scripts/bd.zsh
+# or for bash:
+# source /path/to/your/clone/scripts/bd.bash
+```
+
 ## Notes
 
 - State lives in `~/.local/state/back-directory/bd.sqlite3` (or `$XDG_STATE_HOME`).

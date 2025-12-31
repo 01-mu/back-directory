@@ -39,44 +39,7 @@ tar -xzf bd-core-<target>.tar.gz
 mv bd-core ~/.local/bin/bd-core
 ```
 
-#### Developer install (cargo)
-
-```zsh
-# from a local clone
-cargo install --path .
-
-# or from git
-# cargo install --git https://github.com/01-mu/back-directory
-```
-
-Ensure `bd-core` is on your `PATH` (default is `~/.cargo/bin`).
-
-#### Debugging from a local clone
-
-If you want to run the wrapper from this repo while iterating on the core:
-
-```zsh
-# from a local clone
-cargo install --path . --force
-
-# use the wrapper from this repo
-mkdir -p ~/.config/back-directory
-cp ./scripts/bd.zsh ~/.config/back-directory/bd.zsh
-cp ./scripts/bd.bash ~/.config/back-directory/bd.bash
-# zsh
-source ~/.config/back-directory/bd.zsh
-# bash
-# source ~/.config/back-directory/bd.bash
-```
-
-If you prefer not to copy the wrapper, you can source it directly:
-
-```zsh
-export BD_CORE_BIN="$HOME/.cargo/bin/bd-core"
-source /path/to/your/clone/scripts/bd.zsh
-# or for bash:
-# source /path/to/your/clone/scripts/bd.bash
-```
+Developer setup and local debugging steps are in `docs/development.md`.
 
 #### Wrapper configuration
 
@@ -118,7 +81,7 @@ export BD_SESSION_ID=work-logs
 
 ## Developer guide
 
-See `docs/development.md` for implementation details and development workflow.
+See `docs/development.md` for development setup and implementation details.
 
 ## Layout
 
