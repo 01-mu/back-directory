@@ -317,7 +317,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
         .map(|(step, _)| *step)
         .max()
         .unwrap_or(0);
-    let width = max_step.to_string().len();
+    let width = std::cmp::min(3, max_step.to_string().len());
     for (step, path) in lines.into_iter().rev() {
         println!("{:>width$} {}", step, path, width = width);
     }
