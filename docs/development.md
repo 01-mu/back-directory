@@ -9,7 +9,7 @@ returns it to the wrapper, which then runs `builtin cd`.
 
 We avoid heavy logic in zsh because the original pure-zsh version was slow and unreliable
 under frequent directory changes and in multi-shell use. The Rust core centralizes state
-management, enforces the `1..99` constraint, and keeps per-session cursor/cancel state.
+management, enforces the `1..999` constraint, and keeps per-session cursor/cancel state.
 Each session has its own history and cursor, so `bd` moves by directory-change events
 rather than lines of history. The wrapper stays minimal to avoid conflicts with other
 shell hooks like auto-`ls`.

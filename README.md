@@ -85,7 +85,7 @@ export BD_CORE_BIN=/path/to/bd-core
 
 ```zsh
 bd       # same as: bd 1
-bd 3     # go back 3 directories (1 <= N <= 99)
+bd 3     # go back 3 directories (1 <= N <= 999)
 bd c     # cancel the last bd command in the current session
 bd ls    # list recent targets with their N values
 bd ls 5  # list 5 recent targets

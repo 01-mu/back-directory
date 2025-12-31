@@ -6,7 +6,7 @@ if [[ -n ${BD_LOADED-} ]]; then
 fi
 BD_LOADED=1
 
-BD_MAX_BACK=99
+BD_MAX_BACK=999
 
 _bd_default_core_bin() {
   emulate -L zsh

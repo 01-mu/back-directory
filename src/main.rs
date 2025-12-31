@@ -4,7 +4,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const BD_MAX_BACK: u32 = 99;
+const BD_MAX_BACK: u32 = 999;
 const BD_DEFAULT_LIST: u32 = 10;
 
 #[derive(Parser)]
