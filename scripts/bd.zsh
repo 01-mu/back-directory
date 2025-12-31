@@ -1,5 +1,6 @@
 # back-directory (bd) - zsh wrapper for bd-core
 
+# Skip initialization when this file is sourced more than once.
 if [[ -n ${BD_LOADED-} ]]; then
   return 0
 fi
@@ -23,14 +24,15 @@ _bd_default_core_bin() {
   print -r -- "bd-core"
 }
 
+# BD_CORE_BIN can be set via an environment variable at startup (e.g., in zshrc).
 BD_CORE_BIN=${BD_CORE_BIN:-$(_bd_default_core_bin)}
 
 _bd_sanitize_session_key() {
   emulate -L zsh
   local key="$1"
-  key=${key#/dev/}
-  key=${key//\//_}
-  key=${key//[^A-Za-z0-9._-]/_}
+  key=${key#/dev/}                 # Example: /dev/pts/2 -> pts/2
+  key=${key//\//_}                 # Example: pts/2 -> pts_2
+  key=${key//[^A-Za-z0-9._-]/_}    # Example: a b -> a_b
   print -r -- "$key"
 }
 
