@@ -2,11 +2,7 @@
 
 A zsh/bash wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
 
-## User guide
-
-### Install
-
-If you're not sure, use the one-liner. The other options are for advanced users.
+## Install
 
 #### Recommended: one-liner (GitHub Releases)
 
@@ -14,17 +10,16 @@ If you're not sure, use the one-liner. The other options are for advanced users.
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh | sh
 ```
 
-This installs the core binary to `${XDG_BIN_HOME:-$HOME/.local/bin}` (creates it if needed),
-installs wrappers to `${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh` and
-`${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash`, and adds the appropriate
-`source` lines to your `.zshrc` and `.bashrc`.
-If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on your `PATH`, add this to your shell config:
+This installs the core binary to `${XDG_BIN_HOME:-$HOME/.local/bin}`, wrappers to
+`${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh` and
+`${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash`, and adds `source` lines to
+`.zshrc` / `.bashrc`. If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on `PATH`, add:
 
 ```zsh
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-#### Manual: download from Releases
+#### Manual download (Releases)
 
 1) Download the matching `.tar.gz` for your OS/arch from the latest GitHub Release:
    - `bd-core-aarch64-apple-darwin.tar.gz`
@@ -39,8 +34,6 @@ tar -xzf bd-core-<target>.tar.gz
 mv bd-core ~/.local/bin/bd-core
 ```
 
-Developer setup and local debugging steps are in `docs/development.md`.
-
 #### Wrapper configuration
 
 Start a new shell or `source ~/.zshrc` / `source ~/.bashrc`.
@@ -51,7 +44,7 @@ If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 export BD_CORE_BIN=/path/to/bd-core
 ```
 
-### Usage
+## Usage
 
 ```zsh
 bd       # same as: bd 1
@@ -61,19 +54,13 @@ bd ls    # list recent targets with their N values
 bd ls 5  # list 5 recent targets
 ```
 
-The numbers shown by `bd ls` match the `N` you pass to `bd`.
-`bd c` can be repeated to undo multiple `bd` commands, but any other directory move
-clears that undo history.
+`bd ls` numbers match the `N` you pass to `bd`. `bd c` repeats to undo multiple `bd`
+commands, but any other directory move clears that undo history.
 
-Optional alias:
+Optional alias: `bd cancel`
 
-```zsh
-bd cancel
-```
-
-Session semantics: `bd` tracks history per session key; sessions are isolated from each
-other. By default this is derived from your terminal TTY and the shell PID, so each shell
-is its own session. Set `BD_SESSION_ID` before sourcing if you want to override:
+Session semantics: `bd` tracks history per session key and isolates sessions. The default
+key is your terminal TTY + shell PID. Set `BD_SESSION_ID` before sourcing to override:
 
 ```zsh
 export BD_SESSION_ID=work-logs
@@ -81,17 +68,17 @@ export BD_SESSION_ID=work-logs
 
 ## Developer guide
 
-See `docs/development.md` for development setup and implementation details.
+See `docs/development.md` for development setup, local debugging, and implementation
+details.
 
 ## Layout
 
 - scripts/: distribution scripts (install.sh, bd.zsh, bd.bash)
 - src/: Rust implementation (bd-core)
 
-### Uninstall
+## Uninstall
 
-Since installation is done by placing files on your PATH and adding shell config,
-uninstall is a manual cleanup of those files and changes.
+Uninstall is a manual cleanup of files and shell config changes.
 
 1) Locate the installed binary (the path will be used below):
 
@@ -118,5 +105,5 @@ rm -rf ~/.cache/back-directory
 ```
 
 4) Revert shell setup changes:
-   - Remove any PATH, alias, or `source .../bd.zsh` / `source .../bd.bash` lines you added to `.zshrc` or `.bashrc`
-     `.bashrc`, then restart your shell.
+   - Remove any PATH, alias, or `source .../bd.zsh` / `source .../bd.bash` lines you added to `.zshrc` or `.bashrc`,
+     then restart your shell.
