@@ -1,6 +1,5 @@
-# back-directory (bd) - zsh wrapper for bd-core
+# back-directory (bd) - bash wrapper for bd-core
 
-# Skip initialization when this file is sourced more than once.
 if [[ -n ${BD_LOADED-} ]]; then
   return 0
 fi
@@ -9,79 +8,91 @@ BD_LOADED=1
 BD_MAX_BACK=999
 
 _bd_default_core_bin() {
-  emulate -L zsh
   local bin
   bin=$(command -v bd-core 2>/dev/null)
   if [[ -n $bin ]]; then
-    print -r -- "$bin"
+    printf '%s\n' "$bin"
     return 0
   fi
   local bin_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
   if [[ -x "$bin_dir/bd-core" ]]; then
-    print -r -- "$bin_dir/bd-core"
+    printf '%s\n' "$bin_dir/bd-core"
     return 0
   fi
-  print -r -- "bd-core"
+  printf '%s\n' "bd-core"
 }
 
-# BD_CORE_BIN can be set via an environment variable at startup (e.g., in zshrc).
 BD_CORE_BIN=${BD_CORE_BIN:-$(_bd_default_core_bin)}
 
 _bd_sanitize_session_key() {
-  emulate -L zsh
   local key="$1"
-  key=${key#/dev/}                 # Example: /dev/pts/2 -> pts/2
-  key=${key//\//_}                 # Example: pts/2 -> pts_2
-  key=${key//[^A-Za-z0-9._-]/_}    # Example: a b -> a_b
-  print -r -- "$key"
+  key=${key#/dev/}
+  key=${key//\//_}
+  key=${key//[^A-Za-z0-9._-]/_}
+  printf '%s\n' "$key"
 }
 
 _bd_compute_session_id() {
-  emulate -L zsh
   local key
   if [[ -n ${TTY-} ]]; then
     key="${TTY}-$$"
   else
-    key="${PPID}-$$-${HOST:-unknown}-${USER:-unknown}"
+    key="${PPID-$$}-$$-${HOSTNAME:-unknown}-${USER:-unknown}"
   fi
   _bd_sanitize_session_key "$key"
 }
 
 BD_SESSION_ID=${BD_SESSION_ID:-$(_bd_compute_session_id)}
 
-if [[ -z ${chpwd_functions-} ]]; then
-  typeset -ga chpwd_functions
-fi
-
 _bd_require_core() {
-  emulate -L zsh
   if [[ -x $BD_CORE_BIN ]]; then
     return 0
   fi
   if command -v "$BD_CORE_BIN" >/dev/null 2>&1; then
     return 0
   fi
-  print -r -- "bd: bd-core not found"
+  printf '%s\n' "bd: bd-core not found"
   return 1
 }
 
 _bd_record() {
-  emulate -L zsh
   _bd_require_core || return 1
   "$BD_CORE_BIN" record --session "$BD_SESSION_ID" --pwd "$PWD"
 }
 
-back_directory_chpwd() {
-  emulate -L zsh
+back_directory_prompt() {
   if [[ -n ${BD_SUPPRESS_RECORD-} ]]; then
     unset BD_SUPPRESS_RECORD
     return 0
   fi
-  _bd_record
+  if [[ $PWD != "$BD_LAST_PWD" ]]; then
+    BD_LAST_PWD=$PWD
+    _bd_record >/dev/null 2>&1
+  fi
+}
+
+_bd_add_prompt_command() {
+  local hook="back_directory_prompt"
+  local decl
+  decl=$(declare -p PROMPT_COMMAND 2>/dev/null || true)
+  if [[ $decl == "declare -a"* ]]; then
+    local cmd
+    for cmd in "${PROMPT_COMMAND[@]}"; do
+      if [[ $cmd == "$hook" ]]; then
+        return 0
+      fi
+    done
+    PROMPT_COMMAND+=("$hook")
+  else
+    if [[ -z ${PROMPT_COMMAND-} ]]; then
+      PROMPT_COMMAND="$hook"
+    elif [[ $PROMPT_COMMAND != *"$hook"* ]]; then
+      PROMPT_COMMAND="${PROMPT_COMMAND};$hook"
+    fi
+  fi
 }
 
 bd() {
-  emulate -L zsh
   local arg="${1-}"
 
   if [[ -z $arg ]]; then
@@ -112,19 +123,19 @@ EOF
 
   if [[ $arg == "ls" || $arg == "list" ]]; then
     if (( $# > 2 )); then
-      print -r -- "bd: too many arguments"
+      printf '%s\n' "bd: too many arguments"
       return 1
     fi
     local limit="${2-}"
     if [[ -z $limit ]]; then
       limit=10
     fi
-    if [[ $limit != <-> || $limit -le 0 ]]; then
-      print -r -- "bd: usage: bd ls [N]"
+    if ! [[ $limit =~ ^[0-9]+$ ]] || (( limit <= 0 )); then
+      printf '%s\n' "bd: usage: bd ls [N]"
       return 1
     fi
     if (( limit > BD_MAX_BACK )); then
-      print -r -- "bd: max is $BD_MAX_BACK"
+      printf '%s\n' "bd: max is $BD_MAX_BACK"
       return 1
     fi
     _bd_require_core || return 1
@@ -133,17 +144,17 @@ EOF
   fi
 
   if (( $# > 1 )); then
-    print -r -- "bd: too many arguments"
+    printf '%s\n' "bd: too many arguments"
     return 1
   fi
 
-  if [[ $arg != <-> || $arg -le 0 ]]; then
-    print -r -- "bd: usage: bd [N|c|ls]"
+  if ! [[ $arg =~ ^[0-9]+$ ]] || (( arg <= 0 )); then
+    printf '%s\n' "bd: usage: bd [N|c|ls]"
     return 1
   fi
 
   if (( arg > BD_MAX_BACK )); then
-    print -r -- "bd: max is $BD_MAX_BACK"
+    printf '%s\n' "bd: max is $BD_MAX_BACK"
     return 1
   fi
 
@@ -154,8 +165,6 @@ EOF
   builtin cd -- "$target"
 }
 
-if (( ${chpwd_functions[(I)back_directory_chpwd]} == 0 )); then
-  chpwd_functions+=(back_directory_chpwd)
-fi
-
+_bd_add_prompt_command
+BD_LAST_PWD=$PWD
 _bd_record >/dev/null 2>&1

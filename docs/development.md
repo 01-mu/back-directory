@@ -2,17 +2,59 @@
 
 ## How it works
 
-`bd` is the user command provided by the zsh wrapper. The wrapper installs lightweight
-hooks, validates arguments, and calls the Rust binary `bd-core`. `bd-core` stores and
-queries history in SQLite, computes the target path (including cancel behavior), and
-returns it to the wrapper, which then runs `builtin cd`.
+`bd` is the user command provided by the shell wrappers (zsh/bash). The wrapper installs
+lightweight hooks, validates arguments, and calls the Rust binary `bd-core`. `bd-core`
+stores and queries history in SQLite, computes the target path (including cancel
+behavior), and returns it to the wrapper, which then runs `builtin cd`.
 
 We avoid heavy logic in zsh because the original pure-zsh version was slow and unreliable
 under frequent directory changes and in multi-shell use. The Rust core centralizes state
-management, enforces the `1..99` constraint, and keeps per-session cursor/cancel state
-while sharing history across shells. History is shared, but each shell keeps its own
-cursor so `bd` moves by directory-change events rather than lines of history. The wrapper
-stays minimal to avoid conflicts with other shell hooks like auto-`ls`.
+management, enforces the `1..999` constraint, and keeps per-session cursor/cancel state.
+Each session has its own history and cursor, so `bd` moves by directory-change events
+rather than lines of history. The wrapper stays minimal to avoid conflicts with other
+shell hooks like auto-`ls`. zsh uses `chpwd`, while bash uses `PROMPT_COMMAND` to detect
+directory changes.
+
+## Local setup
+
+### Install (cargo)
+
+```zsh
+# from a local clone
+cargo install --path .
+
+# or from git
+# cargo install --git https://github.com/01-mu/back-directory
+```
+
+Ensure `bd-core` is on your `PATH` (default is `~/.cargo/bin`).
+
+### Debugging from a local clone
+
+If you want to run the wrapper from this repo while iterating on the core:
+
+```zsh
+# from a local clone
+cargo install --path . --force
+
+# use the wrapper from this repo
+mkdir -p ~/.config/back-directory
+cp ./scripts/bd.zsh ~/.config/back-directory/bd.zsh
+cp ./scripts/bd.bash ~/.config/back-directory/bd.bash
+# zsh
+source ~/.config/back-directory/bd.zsh
+# bash
+# source ~/.config/back-directory/bd.bash
+```
+
+If you prefer not to copy the wrapper, you can source it directly:
+
+```zsh
+export BD_CORE_BIN="$HOME/.cargo/bin/bd-core"
+source /path/to/your/clone/scripts/bd.zsh
+# or for bash:
+# source /path/to/your/clone/scripts/bd.bash
+```
 
 ## Development / CI
 
@@ -28,5 +70,7 @@ to pass before merging.
 ## Notes
 
 - State lives in `~/.local/state/back-directory/bd.sqlite3` (or `$XDG_STATE_HOME`).
-- History is shared across shells, but each session has its own cursor and cancel state.
+- History is isolated per session; each session has its own cursor and cancel state.
+- Session keys default to TTY + shell PID, so each shell is its own session unless
+  overridden via `BD_SESSION_ID`.
 - Directory changes are captured via `chpwd`; no `cd` wrapper or per-prompt writes.

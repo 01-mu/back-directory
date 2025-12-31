@@ -7,6 +7,8 @@ BIN_DIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
 CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/back-directory"
 ZSH_FILE="$CFG_DIR/bd.zsh"
 ZSHRC="${ZSHRC:-$HOME/.zshrc}"
+BASH_FILE="$CFG_DIR/bd.bash"
+BASHRC="${BASHRC:-$HOME/.bashrc}"
 LEGACY_WRAPPER="$HOME/.bd.zsh"
 
 uname_s="$(uname -s)"
@@ -42,6 +44,7 @@ target="$arch-$os"
 archive="$BIN_NAME-$target.tar.gz"
 url="https://github.com/$REPO/releases/latest/download/$archive"
 wrapper_url="https://raw.githubusercontent.com/$REPO/main/scripts/bd.zsh"
+wrapper_bash_url="https://raw.githubusercontent.com/$REPO/main/scripts/bd.bash"
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
@@ -61,6 +64,7 @@ fi
 install -m 0755 "$tmpdir/$BIN_NAME" "$BIN_DIR/$BIN_NAME"
 
 curl -fsSL "$wrapper_url" -o "$ZSH_FILE"
+curl -fsSL "$wrapper_bash_url" -o "$BASH_FILE"
 
 if [ -f "$LEGACY_WRAPPER" ]; then
   if grep -q "back-directory (bd) - zsh wrapper" "$LEGACY_WRAPPER"; then
@@ -75,6 +79,7 @@ EOF
 fi
 
 canonical_source='source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh"'
+canonical_bash_source='source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash"'
 
 if [ -f "$ZSHRC" ]; then
   if ! grep -Eq '^[[:space:]]*[^#].*source[[:space:]]+.*back-directory/bd\.zsh' "$ZSHRC"; then
@@ -84,6 +89,14 @@ else
   printf '%s\n' "$canonical_source" >> "$ZSHRC"
 fi
 
+if [ -f "$BASHRC" ]; then
+  if ! grep -Eq '^[[:space:]]*[^#].*source[[:space:]]+.*back-directory/bd\.bash' "$BASHRC"; then
+    printf '\n%s\n' "$canonical_bash_source" >> "$BASHRC"
+  fi
+else
+  printf '%s\n' "$canonical_bash_source" >> "$BASHRC"
+fi
+
 echo "Installed core binary to $BIN_DIR/$BIN_NAME"
-echo "Installed wrapper to $ZSH_FILE"
-echo "Added wrapper to $ZSHRC (start a new shell or source it)"
+echo "Installed wrappers to $ZSH_FILE and $BASH_FILE"
+echo "Added wrapper to $ZSHRC and $BASHRC (start a new shell or source it)"
