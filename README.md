@@ -1,6 +1,6 @@
 # back-directory (bd)
 
-A zsh wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
+A zsh/bash wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
 
 ## User guide
 
@@ -15,8 +15,9 @@ curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/i
 ```
 
 This installs the core binary to `${XDG_BIN_HOME:-$HOME/.local/bin}` (creates it if needed),
-installs the wrapper to `${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh`, and adds
-`source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh"` to your `.zshrc`.
+installs wrappers to `${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh` and
+`${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash`, and adds the appropriate
+`source` lines to your `.zshrc` and `.bashrc`.
 If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on your `PATH`, add this to your shell config:
 
 ```zsh
@@ -61,7 +62,11 @@ cargo install --path . --force
 # use the wrapper from this repo
 mkdir -p ~/.config/back-directory
 cp ./scripts/bd.zsh ~/.config/back-directory/bd.zsh
+cp ./scripts/bd.bash ~/.config/back-directory/bd.bash
+# zsh
 source ~/.config/back-directory/bd.zsh
+# bash
+# source ~/.config/back-directory/bd.bash
 ```
 
 If you prefer not to copy the wrapper, you can source it directly:
@@ -69,11 +74,13 @@ If you prefer not to copy the wrapper, you can source it directly:
 ```zsh
 export BD_CORE_BIN="$HOME/.cargo/bin/bd-core"
 source /path/to/your/clone/scripts/bd.zsh
+# or for bash:
+# source /path/to/your/clone/scripts/bd.bash
 ```
 
 #### Wrapper configuration
 
-Start a new shell or `source ~/.zshrc`.
+Start a new shell or `source ~/.zshrc` / `source ~/.bashrc`.
 
 If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 
@@ -115,7 +122,7 @@ See `docs/development.md` for implementation details and development workflow.
 
 ## Layout
 
-- scripts/: distribution scripts (install.sh, bd.zsh)
+- scripts/: distribution scripts (install.sh, bd.zsh, bd.bash)
 - src/: Rust implementation (bd-core)
 
 ### Uninstall
@@ -148,5 +155,5 @@ rm -rf ~/.cache/back-directory
 ```
 
 4) Revert shell setup changes:
-   - Remove any PATH, alias, or `source .../bd.zsh` lines you added to `.zshrc` or
+   - Remove any PATH, alias, or `source .../bd.zsh` / `source .../bd.bash` lines you added to `.zshrc` or `.bashrc`
      `.bashrc`, then restart your shell.
