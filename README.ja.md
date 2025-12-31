@@ -58,3 +58,35 @@ export BD_SESSION_ID=work-logs
 ## 開発者向け
 
 実装や開発フローは `docs/development.md` を参照してください。
+
+## アンインストール
+
+インストールは PATH への配置とシェル設定の追加なので、アンインストールは手動での削除です。
+
+1) インストール済みバイナリの場所を確認（表示されたパスを使います）:
+
+```zsh
+command -v bd
+# または
+which bd
+```
+
+2) 表示されたパスのバイナリを削除（例）:
+
+```zsh
+rm -f ~/.local/bin/bd
+# または
+sudo rm -f /usr/local/bin/bd
+```
+
+3) 任意の設定/状態/データがある場合のみ削除（作成していなければ不要）:
+
+```zsh
+rm -rf ~/.config/back-directory
+rm -rf ~/.local/share/back-directory
+rm -rf ~/.cache/back-directory
+```
+
+4) シェル設定の変更を元に戻す:
+   - `.zshrc` / `.bashrc` に追加した PATH、エイリアス、`source .../bd.zsh` の行を削除し、
+     シェルを再起動してください。

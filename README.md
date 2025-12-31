@@ -90,3 +90,36 @@ See `docs/development.md` for implementation details and development workflow.
 
 - scripts/: distribution scripts (install.sh, bd.zsh)
 - src/: Rust implementation (bd-core)
+
+### Uninstall
+
+Since installation is done by placing files on your PATH and adding shell config,
+uninstall is a manual cleanup of those files and changes.
+
+1) Locate the installed binary (the path will be used below):
+
+```zsh
+command -v bd
+# or
+which bd
+```
+
+2) Remove the binary at the path printed above (examples):
+
+```zsh
+rm -f ~/.local/bin/bd
+# or
+sudo rm -f /usr/local/bin/bd
+```
+
+3) Remove optional config/state/data if present (only if you created them):
+
+```zsh
+rm -rf ~/.config/back-directory
+rm -rf ~/.local/share/back-directory
+rm -rf ~/.cache/back-directory
+```
+
+4) Revert shell setup changes:
+   - Remove any PATH, alias, or `source .../bd.zsh` lines you added to `.zshrc` or
+     `.bashrc`, then restart your shell.
