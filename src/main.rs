@@ -129,6 +129,12 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
+    tx.execute(
+        "DELETE FROM undo_moves WHERE session_key = ?1",
+        params![session],
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
+
     rotate_events(&tx, session)?;
     tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
     Ok(())
@@ -230,6 +236,12 @@ fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
+    tx.execute(
+        "INSERT INTO undo_moves (session_key, from_id, to_id) VALUES (?1, ?2, ?3)",
+        params![session, cursor_id, target_id],
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
+
     tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
 
     println!("{target_path}");
@@ -317,7 +329,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
         .map(|(step, _)| *step)
         .max()
         .unwrap_or(0);
-    let width = std::cmp::min(3, max_step.to_string().len());
+    let width = max_step.to_string().len();
     for (step, path) in lines.into_iter().rev() {
         println!("{:>width$} {}", step, path, width = width);
     }
@@ -331,23 +343,19 @@ fn cmd_cancel(session: &str) -> Result<(), String> {
         .transaction()
         .map_err(|e| format!("bd: db error: {e}"))?;
 
-    let row: Option<(i64, i64, i64)> = tx
+    let row: Option<(i64, i64)> = tx
         .query_row(
-            "SELECT cursor_id, last_bd_from_id, last_bd_armed FROM sessions WHERE session_key = ?1",
+            "SELECT id, from_id FROM undo_moves WHERE session_key = ?1 ORDER BY id DESC LIMIT 1",
             params![session],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .optional()
         .map_err(|e| format!("bd: db error: {e}"))?;
 
-    let (cursor_id, last_bd_from_id, last_bd_armed) = match row {
+    let (undo_id, last_bd_from_id) = match row {
         Some(value) => value,
         None => return Err("bd: nothing to cancel".to_string()),
     };
-
-    if last_bd_armed != 1 || last_bd_from_id == 0 {
-        return Err("bd: nothing to cancel".to_string());
-    }
 
     let target_path: Option<String> = tx
         .query_row(
@@ -370,9 +378,14 @@ fn cmd_cancel(session: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
+    tx.execute(
+        "DELETE FROM undo_moves WHERE id = ?1",
+        params![undo_id],
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
+
     tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
 
-    let _ = cursor_id;
     println!("{target_path}");
     Ok(())
 }
@@ -403,7 +416,15 @@ fn open_db() -> Result<Connection, String> {
            last_bd_from_id INTEGER NOT NULL DEFAULT 0,
            last_bd_to_id INTEGER NOT NULL DEFAULT 0,
            last_bd_armed INTEGER NOT NULL DEFAULT 0
-         );",
+         );
+         CREATE TABLE IF NOT EXISTS undo_moves (
+           id INTEGER PRIMARY KEY AUTOINCREMENT,
+           session_key TEXT NOT NULL,
+           from_id INTEGER NOT NULL,
+           to_id INTEGER NOT NULL
+         );
+         CREATE INDEX IF NOT EXISTS idx_undo_moves_session_id ON undo_moves(session_key, id);
+         ",
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
@@ -435,6 +456,10 @@ fn rotate_events(tx: &rusqlite::Transaction<'_>, session: &str) -> Result<(), St
                SELECT last_bd_from_id FROM sessions WHERE session_key = ?1 AND last_bd_from_id != 0
                UNION ALL
                SELECT last_bd_to_id FROM sessions WHERE session_key = ?1 AND last_bd_to_id != 0
+               UNION ALL
+               SELECT from_id FROM undo_moves WHERE session_key = ?1
+               UNION ALL
+               SELECT to_id FROM undo_moves WHERE session_key = ?1
              )",
             params![session],
             |row| row.get(0),

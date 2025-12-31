@@ -92,6 +92,8 @@ bd ls 5  # list 5 recent targets
 ```
 
 The numbers shown by `bd ls` match the `N` you pass to `bd`.
+`bd c` can be repeated to undo multiple `bd` commands, but any other directory move
+clears that undo history.
 
 Optional alias:
 
