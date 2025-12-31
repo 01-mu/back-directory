@@ -66,8 +66,8 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
 
     let last_path: Option<String> = tx
         .query_row(
-            "SELECT path FROM events ORDER BY id DESC LIMIT 1",
-            [],
+            "SELECT path FROM events WHERE session_key = ?1 ORDER BY id DESC LIMIT 1",
+            params![session],
             |row| row.get(0),
         )
         .optional()
@@ -77,8 +77,8 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     if last_path.as_deref() != Some(pwd) {
         let ts = current_ts();
         tx.execute(
-            "INSERT INTO events (path, ts) VALUES (?1, ?2)",
-            params![pwd, ts],
+            "INSERT INTO events (session_key, path, ts) VALUES (?1, ?2, ?3)",
+            params![session, pwd, ts],
         )
         .map_err(|e| format!("bd: db error: {e}"))?;
         latest_id = Some(tx.last_insert_rowid());
@@ -87,8 +87,8 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     if latest_id.is_none() {
         latest_id = tx
             .query_row(
-                "SELECT id FROM events ORDER BY id DESC LIMIT 1",
-                [],
+                "SELECT id FROM events WHERE session_key = ?1 ORDER BY id DESC LIMIT 1",
+                params![session],
                 |row| row.get(0),
             )
             .optional()
@@ -100,8 +100,8 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
         None => {
             let ts = current_ts();
             tx.execute(
-                "INSERT INTO events (path, ts) VALUES (?1, ?2)",
-                params![pwd, ts],
+                "INSERT INTO events (session_key, path, ts) VALUES (?1, ?2, ?3)",
+                params![session, pwd, ts],
             )
             .map_err(|e| format!("bd: db error: {e}"))?;
             tx.last_insert_rowid()
@@ -121,7 +121,7 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
-    rotate_events(&tx)?;
+    rotate_events(&tx, session)?;
     tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
     Ok(())
 }
@@ -141,8 +141,8 @@ fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
 
     let latest_id: Option<i64> = tx
         .query_row(
-            "SELECT id FROM events ORDER BY id DESC LIMIT 1",
-            [],
+            "SELECT id FROM events WHERE session_key = ?1 ORDER BY id DESC LIMIT 1",
+            params![session],
             |row| row.get(0),
         )
         .optional()
@@ -163,8 +163,8 @@ fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
 
     let cursor_exists: Option<i64> = tx
         .query_row(
-            "SELECT id FROM events WHERE id = ?1",
-            params![cursor_id],
+            "SELECT id FROM events WHERE id = ?1 AND session_key = ?2",
+            params![cursor_id, session],
             |row| row.get(0),
         )
         .optional()
@@ -176,11 +176,13 @@ fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
 
     let (target_id, target_path, actual_steps) = {
         let mut stmt = tx
-            .prepare("SELECT id, path FROM events WHERE id < ?1 ORDER BY id DESC")
+            .prepare(
+                "SELECT id, path FROM events WHERE session_key = ?1 AND id < ?2 ORDER BY id DESC",
+            )
             .map_err(|e| format!("bd: db error: {e}"))?;
 
         let mut rows = stmt
-            .query(params![cursor_id])
+            .query(params![session, cursor_id])
             .map_err(|e| format!("bd: db error: {e}"))?;
 
         let mut steps: u32 = 0;
@@ -252,8 +254,8 @@ fn cmd_cancel(session: &str) -> Result<(), String> {
 
     let target_path: Option<String> = tx
         .query_row(
-            "SELECT path FROM events WHERE id = ?1",
-            params![last_bd_from_id],
+            "SELECT path FROM events WHERE id = ?1 AND session_key = ?2",
+            params![last_bd_from_id, session],
             |row| row.get(0),
         )
         .optional()
@@ -291,6 +293,7 @@ fn open_db() -> Result<Connection, String> {
          PRAGMA temp_store = MEMORY;
          CREATE TABLE IF NOT EXISTS events (
            id INTEGER PRIMARY KEY AUTOINCREMENT,
+           session_key TEXT NOT NULL DEFAULT '',
            path TEXT NOT NULL,
            ts INTEGER NOT NULL
          );
@@ -303,6 +306,13 @@ fn open_db() -> Result<Connection, String> {
            last_bd_to_id INTEGER NOT NULL DEFAULT 0,
            last_bd_armed INTEGER NOT NULL DEFAULT 0
          );",
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
+
+    migrate_events_session_key(&conn)?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_events_session_id ON events(session_key, id)",
+        [],
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
@@ -325,25 +335,25 @@ fn db_path() -> Result<PathBuf, String> {
     Ok(xdg_state_dir()?.join("bd.sqlite3"))
 }
 
-fn rotate_events(tx: &rusqlite::Transaction<'_>) -> Result<(), String> {
+fn rotate_events(tx: &rusqlite::Transaction<'_>, session: &str) -> Result<(), String> {
     let min_session_cursor_id: Option<i64> = tx
         .query_row(
             "SELECT MIN(val) FROM (
-               SELECT cursor_id AS val FROM sessions WHERE cursor_id != 0
+               SELECT cursor_id AS val FROM sessions WHERE session_key = ?1 AND cursor_id != 0
                UNION ALL
-               SELECT last_bd_from_id FROM sessions WHERE last_bd_from_id != 0
+               SELECT last_bd_from_id FROM sessions WHERE session_key = ?1 AND last_bd_from_id != 0
                UNION ALL
-               SELECT last_bd_to_id FROM sessions WHERE last_bd_to_id != 0
+               SELECT last_bd_to_id FROM sessions WHERE session_key = ?1 AND last_bd_to_id != 0
              )",
-            [],
+            params![session],
             |row| row.get(0),
         )
         .map_err(|e| format!("bd: db error: {e}"))?;
 
     let rotation_cutoff_id: Option<i64> = tx
         .query_row(
-            "SELECT id FROM events ORDER BY id DESC LIMIT 1 OFFSET 9999",
-            [],
+            "SELECT id FROM events WHERE session_key = ?1 ORDER BY id DESC LIMIT 1 OFFSET 9999",
+            params![session],
             |row| row.get(0),
         )
         .optional()
@@ -362,8 +372,45 @@ fn rotate_events(tx: &rusqlite::Transaction<'_>) -> Result<(), String> {
         return Ok(());
     }
 
-    tx.execute("DELETE FROM events WHERE id < ?1", params![delete_before])
+    tx.execute(
+        "DELETE FROM events WHERE session_key = ?1 AND id < ?2",
+        params![session, delete_before],
+    )
         .map_err(|e| format!("bd: db error: {e}"))?;
+
+    Ok(())
+}
+
+fn migrate_events_session_key(conn: &Connection) -> Result<(), String> {
+    let mut stmt = conn
+        .prepare("PRAGMA table_info(events)")
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let mut rows = stmt
+        .query([])
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let mut has_session_key = false;
+    while let Some(row) = rows.next().map_err(|e| format!("bd: db error: {e}"))? {
+        let name: String = row.get(1).map_err(|e| format!("bd: db error: {e}"))?;
+        if name == "session_key" {
+            has_session_key = true;
+            break;
+        }
+    }
+
+    if !has_session_key {
+        conn.execute(
+            "ALTER TABLE events ADD COLUMN session_key TEXT NOT NULL DEFAULT ''",
+            [],
+        )
+        .map_err(|e| format!("bd: db error: {e}"))?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_events_session_id ON events(session_key, id)",
+            [],
+        )
+        .map_err(|e| format!("bd: db error: {e}"))?;
+    }
 
     Ok(())
 }

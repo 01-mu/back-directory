@@ -95,9 +95,9 @@ Optional alias:
 bd cancel
 ```
 
-Session semantics: `bd` tracks history per session key. By default this is derived from
-your terminal TTY and the shell PID, so each shell is its own session. Set
-`BD_SESSION_ID` before sourcing if you want to override:
+Session semantics: `bd` tracks history per session key; sessions are isolated from each
+other. By default this is derived from your terminal TTY and the shell PID, so each shell
+is its own session. Set `BD_SESSION_ID` before sourcing if you want to override:
 
 ```zsh
 export BD_SESSION_ID=work-logs

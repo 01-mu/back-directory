@@ -9,10 +9,10 @@ returns it to the wrapper, which then runs `builtin cd`.
 
 We avoid heavy logic in zsh because the original pure-zsh version was slow and unreliable
 under frequent directory changes and in multi-shell use. The Rust core centralizes state
-management, enforces the `1..99` constraint, and keeps per-session cursor/cancel state
-while sharing history across shells. History is shared, but each shell keeps its own
-cursor so `bd` moves by directory-change events rather than lines of history. The wrapper
-stays minimal to avoid conflicts with other shell hooks like auto-`ls`.
+management, enforces the `1..99` constraint, and keeps per-session cursor/cancel state.
+Each session has its own history and cursor, so `bd` moves by directory-change events
+rather than lines of history. The wrapper stays minimal to avoid conflicts with other
+shell hooks like auto-`ls`.
 
 ## Development / CI
 
@@ -28,7 +28,7 @@ to pass before merging.
 ## Notes
 
 - State lives in `~/.local/state/back-directory/bd.sqlite3` (or `$XDG_STATE_HOME`).
-- History is shared across shells, but each session has its own cursor and cancel state.
+- History is isolated per session; each session has its own cursor and cancel state.
 - Session keys default to TTY + shell PID, so each shell is its own session unless
   overridden via `BD_SESSION_ID`.
 - Directory changes are captured via `chpwd`; no `cd` wrapper or per-prompt writes.
