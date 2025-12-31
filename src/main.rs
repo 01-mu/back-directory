@@ -297,6 +297,7 @@ fn open_db() -> Result<Connection, String> {
            path TEXT NOT NULL,
            ts INTEGER NOT NULL
          );
+         CREATE INDEX IF NOT EXISTS idx_events_session_id ON events(session_key, id);
          CREATE INDEX IF NOT EXISTS idx_events_ts ON events(ts);
          CREATE TABLE IF NOT EXISTS sessions (
            session_key TEXT PRIMARY KEY,
@@ -306,13 +307,6 @@ fn open_db() -> Result<Connection, String> {
            last_bd_to_id INTEGER NOT NULL DEFAULT 0,
            last_bd_armed INTEGER NOT NULL DEFAULT 0
          );",
-    )
-    .map_err(|e| format!("bd: db error: {e}"))?;
-
-    migrate_events_session_key(&conn)?;
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_events_session_id ON events(session_key, id)",
-        [],
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
@@ -381,39 +375,6 @@ fn rotate_events(tx: &rusqlite::Transaction<'_>, session: &str) -> Result<(), St
     Ok(())
 }
 
-fn migrate_events_session_key(conn: &Connection) -> Result<(), String> {
-    let mut stmt = conn
-        .prepare("PRAGMA table_info(events)")
-        .map_err(|e| format!("bd: db error: {e}"))?;
-
-    let mut rows = stmt
-        .query([])
-        .map_err(|e| format!("bd: db error: {e}"))?;
-
-    let mut has_session_key = false;
-    while let Some(row) = rows.next().map_err(|e| format!("bd: db error: {e}"))? {
-        let name: String = row.get(1).map_err(|e| format!("bd: db error: {e}"))?;
-        if name == "session_key" {
-            has_session_key = true;
-            break;
-        }
-    }
-
-    if !has_session_key {
-        conn.execute(
-            "ALTER TABLE events ADD COLUMN session_key TEXT NOT NULL DEFAULT ''",
-            [],
-        )
-        .map_err(|e| format!("bd: db error: {e}"))?;
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_events_session_id ON events(session_key, id)",
-            [],
-        )
-        .map_err(|e| format!("bd: db error: {e}"))?;
-    }
-
-    Ok(())
-}
 
 fn current_ts() -> i64 {
     SystemTime::now()
