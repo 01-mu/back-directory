@@ -97,6 +97,28 @@ bd() {
     return $?
   fi
 
+  if [[ $arg == "ls" || $arg == "list" ]]; then
+    if (( $# > 2 )); then
+      print -r -- "bd: too many arguments"
+      return 1
+    fi
+    local limit="${2-}"
+    if [[ -z $limit ]]; then
+      limit=10
+    fi
+    if [[ $limit != <-> || $limit -le 0 ]]; then
+      print -r -- "bd: usage: bd ls [N]"
+      return 1
+    fi
+    if (( limit > BD_MAX_BACK )); then
+      print -r -- "bd: max is $BD_MAX_BACK"
+      return 1
+    fi
+    _bd_require_core || return 1
+    "$BD_CORE_BIN" list --session "$BD_SESSION_ID" --limit "$limit" || return $?
+    return 0
+  fi
+
   if (( $# > 1 )); then
     print -r -- "bd: too many arguments"
     return 1

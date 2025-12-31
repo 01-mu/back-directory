@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const BD_MAX_BACK: u32 = 99;
+const BD_DEFAULT_LIST: u32 = 10;
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -29,6 +30,12 @@ enum Commands {
         #[arg(long)]
         print_path: bool,
     },
+    List {
+        #[arg(long)]
+        session: String,
+        #[arg(long, default_value_t = BD_DEFAULT_LIST)]
+        limit: u32,
+    },
     Cancel {
         #[arg(long)]
         session: String,
@@ -44,6 +51,7 @@ fn main() {
             n,
             print_path,
         } => cmd_back(&session, n, print_path),
+        Commands::List { session, limit } => cmd_list(&session, limit),
         Commands::Cancel { session } => cmd_cancel(&session),
     };
 
@@ -225,6 +233,95 @@ fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
     tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
 
     println!("{target_path}");
+    Ok(())
+}
+
+fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
+    if limit == 0 {
+        return Err("bd: usage: bd ls [N]".to_string());
+    }
+    if limit > BD_MAX_BACK {
+        return Err(format!("bd: max is {BD_MAX_BACK}"));
+    }
+
+    let mut conn = open_db()?;
+    let tx = conn
+        .transaction()
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let latest_id: Option<i64> = tx
+        .query_row(
+            "SELECT id FROM events WHERE session_key = ?1 ORDER BY id DESC LIMIT 1",
+            params![session],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let mut cursor_id: i64 = match tx
+        .query_row(
+            "SELECT cursor_id FROM sessions WHERE session_key = ?1",
+            params![session],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("bd: db error: {e}"))?
+    {
+        Some(id) => id,
+        None => latest_id.ok_or_else(|| "bd: no earlier directory".to_string())?,
+    };
+
+    let cursor_exists: Option<i64> = tx
+        .query_row(
+            "SELECT id FROM events WHERE id = ?1 AND session_key = ?2",
+            params![cursor_id, session],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    if cursor_exists.is_none() {
+        cursor_id = latest_id.ok_or_else(|| "bd: no earlier directory".to_string())?;
+    }
+
+    let mut stmt = tx
+        .prepare("SELECT id, path FROM events WHERE session_key = ?1 AND id < ?2 ORDER BY id DESC")
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let mut rows = stmt
+        .query(params![session, cursor_id])
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let mut steps: u32 = 0;
+    let mut printed = 0;
+    let mut lines: Vec<(u32, String)> = Vec::new();
+    while let Some(row) = rows.next().map_err(|e| format!("bd: db error: {e}"))? {
+        let _id: i64 = row.get(0).map_err(|e| format!("bd: db error: {e}"))?;
+        let path: String = row.get(1).map_err(|e| format!("bd: db error: {e}"))?;
+        steps += 1;
+        if Path::new(&path).is_dir() {
+            lines.push((steps, path));
+            printed += 1;
+            if printed >= limit {
+                break;
+            }
+        }
+    }
+
+    if printed == 0 {
+        return Err("bd: no earlier directory".to_string());
+    }
+
+    let max_step = lines
+        .iter()
+        .map(|(step, _)| *step)
+        .max()
+        .unwrap_or(0);
+    let width = max_step.to_string().len();
+    for (step, path) in lines.into_iter().rev() {
+        println!("{:>width$} {}", step, path, width = width);
+    }
+
     Ok(())
 }
 
