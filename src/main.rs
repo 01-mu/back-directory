@@ -142,7 +142,7 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
 
 fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
     if n == 0 {
-        return Err("bd: usage: bd [N|c]".to_string());
+        return Err("bd: usage: bd [N|c|ls]".to_string());
     }
     if n > BD_MAX_BACK {
         return Err(format!("bd: max is {BD_MAX_BACK}"));
@@ -280,7 +280,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
         .map_err(|e| format!("bd: db error: {e}"))?
     {
         Some(id) => id,
-        None => latest_id.ok_or_else(|| "bd: no earlier directory".to_string())?,
+        None => latest_id.ok_or_else(|| "bd: no history in this session".to_string())?,
     };
 
     let cursor_exists: Option<i64> = tx
@@ -293,7 +293,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
         .map_err(|e| format!("bd: db error: {e}"))?;
 
     if cursor_exists.is_none() {
-        cursor_id = latest_id.ok_or_else(|| "bd: no earlier directory".to_string())?;
+        cursor_id = latest_id.ok_or_else(|| "bd: no history in this session".to_string())?;
     }
 
     let mut stmt = tx
@@ -321,7 +321,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
     }
 
     if printed == 0 {
-        return Err("bd: no earlier directory".to_string());
+        return Err("bd: no history in this session".to_string());
     }
 
     let max_step = lines

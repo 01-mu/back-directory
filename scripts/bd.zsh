@@ -125,7 +125,7 @@ bd() {
   fi
 
   if [[ $arg != <-> || $arg -le 0 ]]; then
-    print -r -- "bd: usage: bd [N|c]"
+    print -r -- "bd: usage: bd [N|c|ls]"
     return 1
   fi
 
