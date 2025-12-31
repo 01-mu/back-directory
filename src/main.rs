@@ -324,11 +324,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
         return Err("bd: no history in this session".to_string());
     }
 
-    let max_step = lines
-        .iter()
-        .map(|(step, _)| *step)
-        .max()
-        .unwrap_or(0);
+    let max_step = lines.iter().map(|(step, _)| *step).max().unwrap_or(0);
     let width = max_step.to_string().len();
     for (step, path) in lines.into_iter().rev() {
         println!("{:>width$} {}", step, path, width = width);
@@ -378,11 +374,8 @@ fn cmd_cancel(session: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
-    tx.execute(
-        "DELETE FROM undo_moves WHERE id = ?1",
-        params![undo_id],
-    )
-    .map_err(|e| format!("bd: db error: {e}"))?;
+    tx.execute("DELETE FROM undo_moves WHERE id = ?1", params![undo_id])
+        .map_err(|e| format!("bd: db error: {e}"))?;
 
     tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
 
@@ -492,11 +485,10 @@ fn rotate_events(tx: &rusqlite::Transaction<'_>, session: &str) -> Result<(), St
         "DELETE FROM events WHERE session_key = ?1 AND id < ?2",
         params![session, delete_before],
     )
-        .map_err(|e| format!("bd: db error: {e}"))?;
+    .map_err(|e| format!("bd: db error: {e}"))?;
 
     Ok(())
 }
-
 
 fn current_ts() -> i64 {
     SystemTime::now()
