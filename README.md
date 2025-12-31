@@ -50,6 +50,27 @@ cargo install --path .
 
 Ensure `bd-core` is on your `PATH` (default is `~/.cargo/bin`).
 
+#### Debugging from a local clone
+
+If you want to run the wrapper from this repo while iterating on the core:
+
+```zsh
+# from a local clone
+cargo install --path . --force
+
+# use the wrapper from this repo
+mkdir -p ~/.config/back-directory
+cp ./scripts/bd.zsh ~/.config/back-directory/bd.zsh
+source ~/.config/back-directory/bd.zsh
+```
+
+If you prefer not to copy the wrapper, you can source it directly:
+
+```zsh
+export BD_CORE_BIN="$HOME/.cargo/bin/bd-core"
+source /path/to/your/clone/scripts/bd.zsh
+```
+
 #### Wrapper configuration
 
 Start a new shell or `source ~/.zshrc`.
