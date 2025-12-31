@@ -40,19 +40,14 @@ _bd_compute_session_id() {
   emulate -L zsh
   local key
   if [[ -n ${TTY-} ]]; then
-    key="$TTY"
+    key="${TTY}-$$"
   else
-    key="${PPID}-${HOST:-unknown}-${USER:-unknown}"
+    key="${PPID}-$$-${HOST:-unknown}-${USER:-unknown}"
   fi
   _bd_sanitize_session_key "$key"
 }
 
-if [[ -z ${BD_SESSION_ID-} && -n ${BD_SESSION_KEY-} ]]; then
-  BD_SESSION_ID="$BD_SESSION_KEY"
-fi
-
 BD_SESSION_ID=${BD_SESSION_ID:-$(_bd_compute_session_id)}
-BD_SESSION_KEY=${BD_SESSION_KEY:-$BD_SESSION_ID}
 
 if [[ -z ${chpwd_functions-} ]]; then
   typeset -ga chpwd_functions

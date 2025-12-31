@@ -75,8 +75,8 @@ bd cancel
 ```
 
 Session semantics: `bd` tracks history per session key. By default this is derived from
-your terminal TTY, so a new terminal tab/window is a new session, while new shells in the
-same tab share history. Set `BD_SESSION_ID` before sourcing if you want to override:
+your terminal TTY and the shell PID, so each shell is its own session. Set
+`BD_SESSION_ID` before sourcing if you want to override:
 
 ```zsh
 export BD_SESSION_ID=work-logs

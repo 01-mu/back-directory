@@ -29,4 +29,6 @@ to pass before merging.
 
 - State lives in `~/.local/state/back-directory/bd.sqlite3` (or `$XDG_STATE_HOME`).
 - History is shared across shells, but each session has its own cursor and cancel state.
+- Session keys default to TTY + shell PID, so each shell is its own session unless
+  overridden via `BD_SESSION_ID`.
 - Directory changes are captured via `chpwd`; no `cd` wrapper or per-prompt writes.
