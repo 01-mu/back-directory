@@ -21,22 +21,27 @@ commands, but any other directory move clears that undo history.
 
 ## Install
 
-#### Recommended: one-liner (GitHub Releases)
+#### Recommended: install.sh
+
+1) Download `install.sh` from this repository.
+
+2) Run it:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh | sh
+sh ./install.sh
 ```
 
 This installs the core binary to `${XDG_BIN_HOME:-$HOME/.local/bin}`, wrappers to
 `${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash` and
 `${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh`, and adds `source` lines to
-`.bashrc` / `.zshrc`. If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on `PATH`, add:
+`.bashrc` / `.zshrc`. Start a new shell or `source ~/.bashrc` / `source ~/.zshrc`.
+If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on `PATH`, add:
 
 ```sh
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-#### Manual download (Releases)
+#### Manual download
 
 1) Download the matching `.tar.gz` for your OS/arch from the latest GitHub Release:
    - `bd-core-aarch64-apple-darwin.tar.gz`
@@ -51,9 +56,17 @@ tar -xzf bd-core-<target>.tar.gz
 mv bd-core ~/.local/bin/bd-core
 ```
 
-#### Wrapper configuration
+3) Install the wrapper scripts:
 
-Start a new shell or `source ~/.bashrc` / `source ~/.zshrc`.
+```sh
+mkdir -p ~/.config/back-directory
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/bd.bash \
+  -o ~/.config/back-directory/bd.bash
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/bd.zsh \
+  -o ~/.config/back-directory/bd.zsh
+```
+
+4) Add `source` lines to your shell rc, then start a new shell or `source ~/.bashrc` / `source ~/.zshrc`.
 
 If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 
