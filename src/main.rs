@@ -326,8 +326,21 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
 
     let max_step = lines.iter().map(|(step, _)| *step).max().unwrap_or(0);
     let width = max_step.to_string().len();
+    let home_raw = std::env::var("HOME").unwrap_or_default();
+    let home = if home_raw.ends_with('/') && home_raw.len() > 1 {
+        home_raw.trim_end_matches('/').to_string()
+    } else {
+        home_raw
+    };
     for (step, path) in lines.into_iter().rev() {
-        println!("[{:>width$}] {}", step, path, width = width);
+        let display_path = if !home.is_empty() && path == home {
+            "~".to_string()
+        } else if !home.is_empty() && path.starts_with(&(home.clone() + "/")) {
+            format!("~{}", &path[home.len()..])
+        } else {
+            path
+        };
+        println!("[{:>width$}] {}", step, display_path, width = width);
     }
 
     Ok(())

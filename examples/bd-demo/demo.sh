@@ -5,6 +5,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 export PATH="$SCRIPT_DIR:$PATH"
 
 DEMO_HOME=$(cd -- "$SCRIPT_DIR/../.." && pwd -P)/examples
+DEMO_TILDE_PREFIX="~${DEMO_HOME#$HOME}"
 
 # Ensure bd is available in this bash session.
 if [[ -f "$SCRIPT_DIR/../../scripts/bd.bash" ]]; then
@@ -35,7 +36,7 @@ show_pwd() {
 
 show_list() {
   p "bd ls"
-  run_cmd "bd ls | sed \"s|$DEMO_HOME|~|\""
+  run_cmd "bd ls | sed \"s|$DEMO_TILDE_PREFIX/|~/|; s|$DEMO_TILDE_PREFIX$|~|\""
 }
 
 show_pwd
