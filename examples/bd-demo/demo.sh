@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 export PATH="$SCRIPT_DIR:$PATH"
 
-DEMO_HOME=$(cd -- "$SCRIPT_DIR/../.." && pwd -P)
+DEMO_HOME=$(cd -- "$SCRIPT_DIR/../.." && pwd -P)/examples
 
 # Ensure bd is available in this bash session.
 if [[ -f "$SCRIPT_DIR/../../scripts/bd.bash" ]]; then
