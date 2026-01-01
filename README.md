@@ -2,7 +2,9 @@
 
 A zsh/bash wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
 
-[![asciicast](https://asciinema.org/a/KDANN9rdwLcNXc9rbMLQDmlKx.svg)](https://asciinema.org/a/KDANN9rdwLcNXc9rbMLQDmlKx)
+## Getting started
+
+![back-directory demo](examples/bd-demo/media/bd-demo.webp)
 
 ## Install
 
