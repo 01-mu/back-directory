@@ -62,7 +62,7 @@ pause 0.7
 
 show_list
 pause 0.4
-pe "bd 4"
+pe "bd 3"
 _bd_record >/dev/null 2>&1
 pause 0.4
 show_pwd
@@ -72,23 +72,12 @@ pe "bd"
 pause 0.4
 show_pwd
 pause 0.7
-
-show_list
-pause 0.4
-pe "bd 2"
-pause 0.4
-show_pwd
-pause 0.7
 pe "bd c"
 _bd_record >/dev/null 2>&1
 pause 0.4
 show_pwd
 pause 0.7
 
-show_list
-pause 0.4
-pe "bd 3"
-_bd_record >/dev/null 2>&1
 pause 1.2
 
 pe "exit"
