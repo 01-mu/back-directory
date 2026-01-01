@@ -544,13 +544,16 @@ fn ensure_schema(conn: &Connection) -> Result<(), String> {
     Ok(())
 }
 
-fn ensure_column(conn: &Connection, table: &str, column: &str, definition: &str) -> Result<(), String> {
+fn ensure_column(
+    conn: &Connection,
+    table: &str,
+    column: &str,
+    definition: &str,
+) -> Result<(), String> {
     let mut stmt = conn
         .prepare(&format!("PRAGMA table_info({table})"))
         .map_err(|e| format!("bd: db error: {e}"))?;
-    let mut rows = stmt
-        .query([])
-        .map_err(|e| format!("bd: db error: {e}"))?;
+    let mut rows = stmt.query([]).map_err(|e| format!("bd: db error: {e}"))?;
     while let Some(row) = rows.next().map_err(|e| format!("bd: db error: {e}"))? {
         let name: String = row.get(1).map_err(|e| format!("bd: db error: {e}"))?;
         if name == column {
