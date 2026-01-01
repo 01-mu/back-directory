@@ -19,15 +19,6 @@ bd ls 5  # list 5 recent targets
 `bd ls` numbers match the `N` you pass to `bd`. `bd c` repeats to undo multiple `bd`
 commands, but any other directory move clears that undo history.
 
-Optional alias: `bd cancel`
-
-Session semantics: `bd` tracks history per session key and isolates sessions. The default
-key is your terminal TTY + shell PID. Set `BD_SESSION_ID` before sourcing to override:
-
-```zsh
-export BD_SESSION_ID=work-logs
-```
-
 ## Install
 
 #### Recommended: one-liner (GitHub Releases)
