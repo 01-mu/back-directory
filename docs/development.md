@@ -99,6 +99,7 @@ Per-session cursor and last `bd` move state.
 | last_bd_from_id | INTEGER | NOT NULL, DEFAULT 0 | Event id before the last `bd` move. |
 | last_bd_to_id | INTEGER | NOT NULL, DEFAULT 0 | Event id after the last `bd` move. |
 | last_bd_armed | INTEGER | NOT NULL, DEFAULT 0 | Cancel toggle (0/1). |
+| last_seen_at | INTEGER | NOT NULL, DEFAULT 0 | Last activity timestamp (seconds). |
 
 ### undo_moves
 
@@ -110,12 +111,26 @@ Stack of cancelable moves.
 | session_key | TEXT | NOT NULL | Session identifier. |
 | from_id | INTEGER | NOT NULL | Event id before the move. |
 | to_id | INTEGER | NOT NULL | Event id after the move. |
+| created_at | INTEGER | NOT NULL, DEFAULT 0 | Creation timestamp (seconds). |
 
 Indexes:
 
 - `idx_undo_moves_session_id` on `(session_key, id)`
 
-### Data cleanup (events rotation)
+### meta
+
+Lightweight key/value store for maintenance metadata.
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| key | TEXT | PK | Metadata key name. |
+| value | INTEGER | NOT NULL | UNIX timestamp or numeric value. |
+
+Current keys:
+
+- `last_cleanup_at`: UNIX timestamp of the last cleanup run.
+
+### Data cleanup
 
 To prevent unbounded growth, the `events` table is rotated per session:
 
@@ -124,6 +139,12 @@ To prevent unbounded growth, the `events` table is rotated per session:
   `sessions` (`cursor_id`, `last_bd_from_id`, `last_bd_to_id`) or `undo_moves` (`from_id`, `to_id`).
 - If there is no cursor/undo state yet, or the session has fewer than 10,000 events,
   no deletion occurs.
+
+Additional retention cleanup runs about every 10 days:
+
+- `sessions`: delete rows with `last_seen_at` older than 180 days (excluding the current session).
+- `undo_moves`: delete rows with `created_at` older than 90 days.
+- Cleanup scheduling uses `meta.last_cleanup_at`.
 
 
 ## Notes
