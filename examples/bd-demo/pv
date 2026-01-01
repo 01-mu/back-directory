@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+rate=""
+while getopts ":qL:" opt; do
+  case "$opt" in
+    q)
+      ;;
+    L)
+      rate="$OPTARG"
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [[ -z "$rate" ]]; then
+  cat
+  exit 0
+fi
+
+if ! [[ "$rate" =~ ^[0-9]+$ ]]; then
+  cat
+  exit 0
+fi
+
+delay=$(awk -v r="$rate" 'BEGIN { if (r <= 0) r = 1; printf "%.4f", 1 / r }')
+LC_ALL=C
+
+while IFS= read -r -n1 ch; do
+  printf "%s" "$ch"
+  sleep "$delay"
+done

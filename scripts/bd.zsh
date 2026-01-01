@@ -75,9 +75,11 @@ back_directory_chpwd() {
   emulate -L zsh
   if [[ -n ${BD_SUPPRESS_RECORD-} ]]; then
     unset BD_SUPPRESS_RECORD
+    BD_LAST_PWD=$PWD
     return 0
   fi
   _bd_record
+  BD_LAST_PWD=$PWD
 }
 
 bd() {
@@ -88,15 +90,16 @@ bd() {
     arg=1
   fi
 
-  if [[ $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
+  if [[ $arg == "h" || $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
     cat <<'EOF'
-usage: bd [N|c|ls|help]
+usage: bd [N|c|ls|h]
 
   bd           go back 1 directory
   bd N         go back N directories (1 <= N <= 999)
   bd c         cancel the last bd command
   bd ls [N]    list recent targets with their N values (default 10)
-  bd help      show this help
+  bd h         show this help
+  bd help      alias for bd h
 EOF
     return 0
   fi
@@ -138,7 +141,7 @@ EOF
   fi
 
   if [[ $arg != <-> || $arg -le 0 ]]; then
-    print -r -- "bd: usage: bd [N|c|ls]"
+    print -r -- "bd: usage: bd [N|c|ls|h]"
     return 1
   fi
 
@@ -158,4 +161,5 @@ if (( ${chpwd_functions[(I)back_directory_chpwd]} == 0 )); then
   chpwd_functions+=(back_directory_chpwd)
 fi
 
+BD_LAST_PWD=$PWD
 _bd_record >/dev/null 2>&1

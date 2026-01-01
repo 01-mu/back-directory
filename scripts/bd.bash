@@ -63,6 +63,7 @@ _bd_record() {
 back_directory_prompt() {
   if [[ -n ${BD_SUPPRESS_RECORD-} ]]; then
     unset BD_SUPPRESS_RECORD
+    BD_LAST_PWD=$PWD
     return 0
   fi
   if [[ $PWD != "$BD_LAST_PWD" ]]; then
