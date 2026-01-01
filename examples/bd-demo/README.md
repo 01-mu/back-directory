@@ -17,7 +17,7 @@ This directory contains a reproducible asciinema demo for back-directory using a
 ## Record
 
 ```bash
-asciinema rec examples/bd-demo/bd-demo.cast \
+asciinema rec examples/bd-demo/media/bd-demo.cast \
   --command "bash -lc 'cd examples/bd-demo && ./demo.sh'"
 ```
 
@@ -26,32 +26,40 @@ The recording starts in `examples/bd-demo`, and all demo paths are relative to t
 ## Re-record
 
 ```bash
-rm -f examples/bd-demo/bd-demo.cast
-asciinema rec examples/bd-demo/bd-demo.cast \
+rm -f examples/bd-demo/media/bd-demo.cast
+asciinema rec examples/bd-demo/media/bd-demo.cast \
   --command "bash -lc 'cd examples/bd-demo && ./demo.sh'"
 ```
 
 ## Play
 
 ```bash
-asciinema play examples/bd-demo/bd-demo.cast
+asciinema play examples/bd-demo/media/bd-demo.cast
 ```
 
-## Upload
+## Convert to WebP
+
+Install `agg` (asciinema GIF/WebP generator):
 
 ```bash
-asciinema upload --server-url https://asciinema.org examples/bd-demo/bd-demo.cast
+# macOS (Homebrew)
+brew install agg
+
+# Linux (cargo)
+cargo install --git https://github.com/asciinema/agg
 ```
 
-If this machine is not linked to an asciinema.org account, authenticate first:
+Convert the recording directly to WebP:
 
 ```bash
-asciinema auth --server-url https://asciinema.org
+agg --speed 1.25 --font-size 16 --cols 80 --fps-cap 30 \
+  examples/bd-demo/media/bd-demo.cast \
+  examples/bd-demo/media/bd-demo.webp
 ```
 
-After uploading, replace the asciinema URL in the repository root `README.md`.
+After converting, replace the demo image in the repository root `README.md` with
+`examples/bd-demo/media/bd-demo.webp`.
 
 ## Notes
 
-- The `bd-demo.cast` file is intentionally ignored by git.
 - The demo relies on directory structure only; no prompt customization is used.
