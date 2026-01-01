@@ -32,6 +32,11 @@ show_pwd() {
   run_cmd "pwd | sed \"s|$DEMO_HOME|~|\""
 }
 
+show_list() {
+  p "bd ls"
+  run_cmd "bd ls | sed \"s|$DEMO_HOME|~|\""
+}
+
 show_pwd
 pause 0.7
 
@@ -53,12 +58,21 @@ pause 0.4
 show_pwd
 pause 0.7
 
+show_list
+pause 0.4
 pe "bd 4"
 _bd_record >/dev/null 2>&1
 pause 0.4
 show_pwd
 pause 0.7
 
+pe "bd"
+pause 0.4
+show_pwd
+pause 0.7
+
+show_list
+pause 0.4
 pe "bd 2"
 pause 0.4
 show_pwd
@@ -69,6 +83,8 @@ pause 0.4
 show_pwd
 pause 0.7
 
+show_list
+pause 0.4
 pe "bd 3"
 _bd_record >/dev/null 2>&1
 pause 1.2
