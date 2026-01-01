@@ -93,12 +93,12 @@ rm -rf ~/.cache/back-directory
    - Remove any PATH, alias, or `source .../bd.zsh` / `source .../bd.bash` lines you added to `.zshrc` or `.bashrc`,
      then restart your shell.
 
-## Developer guide
-
-See `docs/development.md` for development setup, local debugging, and implementation
-details.
-
 ## Layout
 
 - scripts/: distribution scripts (install.sh, bd.zsh, bd.bash)
 - src/: Rust implementation (bd-core)
+
+## Developer guide
+
+See `docs/development.md` for development setup, local debugging, and implementation
+details.
