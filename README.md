@@ -2,6 +2,8 @@
 
 A zsh/bash wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
 
+[![asciicast](https://asciinema.org/a/AhZgfoTb7mwgMaIa68wmaUv23.svg)](https://asciinema.org/a/AhZgfoTb7mwgMaIa68wmaUv23)
+
 ## Install
 
 #### Recommended: one-liner (GitHub Releases)
