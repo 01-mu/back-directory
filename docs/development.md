@@ -117,6 +117,19 @@ Indexes:
 
 - `idx_undo_moves_session_id` on `(session_key, id)`
 
+### meta
+
+Lightweight key/value store for maintenance metadata.
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| key | TEXT | PK | Metadata key name. |
+| value | INTEGER | NOT NULL | UNIX timestamp or numeric value. |
+
+Current keys:
+
+- `last_cleanup_at`: UNIX timestamp of the last cleanup run.
+
 ### Data cleanup
 
 To prevent unbounded growth, the `events` table is rotated per session:
@@ -131,6 +144,7 @@ Additional retention cleanup runs about every 10 days:
 
 - `sessions`: delete rows with `last_seen_at` older than 180 days (excluding the current session).
 - `undo_moves`: delete rows with `created_at` older than 90 days.
+- Cleanup scheduling uses `meta.last_cleanup_at`.
 
 
 ## Notes
