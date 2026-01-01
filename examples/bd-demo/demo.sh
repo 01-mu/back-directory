@@ -39,9 +39,15 @@ show_list() {
   run_cmd "bd ls | sed \"s|$DEMO_TILDE_PREFIX/|~/|; s|$DEMO_TILDE_PREFIX$|~|\""
 }
 
+announce() {
+  p ""
+  p "# $1"
+}
+
 show_pwd
 pause 0.7
 
+announce "Setting up the demo"
 run_cmd "mkdir -p workspace/project/frontend/app/dashboard/settings/profile workspace/project/frontend/app/dashboard/settings/security workspace/project/backend/src/domain/user workspace/project/backend/src/domain/order workspace/project/infra/envs/prod"
 pause 0.7
 
@@ -60,19 +66,24 @@ pause 0.4
 show_pwd
 pause 0.7
 
+announce "Show bd history"
 show_list
 pause 0.4
+announce "Go back one directory"
 pe "bd"
 pause 0.4
 show_pwd
 pause 0.7
 
+announce "Show bd history"
 show_list
 pause 0.4
+announce "Go back two directories"
 pe "bd 2"
 pause 0.4
 show_pwd
 pause 0.7
+announce "Cancel the last move"
 pe "bd c"
 _bd_record >/dev/null 2>&1
 pause 0.4
