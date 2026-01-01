@@ -6,6 +6,28 @@ A zsh/bash wrapper plus a Rust core for fast, correct directory backtracking wit
 
 ![back-directory demo](examples/bd-demo/media/bd-demo.webp)
 
+## Usage
+
+```zsh
+bd       # same as: bd 1
+bd 3     # go back 3 directories (1 <= N <= 999)
+bd c     # cancel the last bd command in the current session
+bd ls    # list recent targets with their N values
+bd ls 5  # list 5 recent targets
+```
+
+`bd ls` numbers match the `N` you pass to `bd`. `bd c` repeats to undo multiple `bd`
+commands, but any other directory move clears that undo history.
+
+Optional alias: `bd cancel`
+
+Session semantics: `bd` tracks history per session key and isolates sessions. The default
+key is your terminal TTY + shell PID. Set `BD_SESSION_ID` before sourcing to override:
+
+```zsh
+export BD_SESSION_ID=work-logs
+```
+
 ## Install
 
 #### Recommended: one-liner (GitHub Releases)
@@ -48,38 +70,6 @@ If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 export BD_CORE_BIN=/path/to/bd-core
 ```
 
-## Usage
-
-```zsh
-bd       # same as: bd 1
-bd 3     # go back 3 directories (1 <= N <= 999)
-bd c     # cancel the last bd command in the current session
-bd ls    # list recent targets with their N values
-bd ls 5  # list 5 recent targets
-```
-
-`bd ls` numbers match the `N` you pass to `bd`. `bd c` repeats to undo multiple `bd`
-commands, but any other directory move clears that undo history.
-
-Optional alias: `bd cancel`
-
-Session semantics: `bd` tracks history per session key and isolates sessions. The default
-key is your terminal TTY + shell PID. Set `BD_SESSION_ID` before sourcing to override:
-
-```zsh
-export BD_SESSION_ID=work-logs
-```
-
-## Developer guide
-
-See `docs/development.md` for development setup, local debugging, and implementation
-details.
-
-## Layout
-
-- scripts/: distribution scripts (install.sh, bd.zsh, bd.bash)
-- src/: Rust implementation (bd-core)
-
 ## Uninstall
 
 Uninstall is a manual cleanup of files and shell config changes.
@@ -111,3 +101,13 @@ rm -rf ~/.cache/back-directory
 4) Revert shell setup changes:
    - Remove any PATH, alias, or `source .../bd.zsh` / `source .../bd.bash` lines you added to `.zshrc` or `.bashrc`,
      then restart your shell.
+
+## Developer guide
+
+See `docs/development.md` for development setup, local debugging, and implementation
+details.
+
+## Layout
+
+- scripts/: distribution scripts (install.sh, bd.zsh, bd.bash)
+- src/: Rust implementation (bd-core)
