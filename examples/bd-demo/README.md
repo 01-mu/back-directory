@@ -25,6 +25,20 @@ asciinema rec examples/bd-demo/bd-demo.cast \
 
 The recording starts in `examples/bd-demo`, and all demo paths are relative to that directory.
 
+## Play the demo
+
+From the repository root:
+
+```bash
+asciinema play examples/bd-demo/bd-demo.cast
+```
+
+Or from `examples/bd-demo`:
+
+```bash
+asciinema play bd-demo.cast
+```
+
 ## Notes
 
 - The `bd-demo.cast` file is intentionally ignored by git.
