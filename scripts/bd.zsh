@@ -75,9 +75,11 @@ back_directory_chpwd() {
   emulate -L zsh
   if [[ -n ${BD_SUPPRESS_RECORD-} ]]; then
     unset BD_SUPPRESS_RECORD
+    BD_LAST_PWD=$PWD
     return 0
   fi
   _bd_record
+  BD_LAST_PWD=$PWD
 }
 
 bd() {
@@ -159,4 +161,5 @@ if (( ${chpwd_functions[(I)back_directory_chpwd]} == 0 )); then
   chpwd_functions+=(back_directory_chpwd)
 fi
 
+BD_LAST_PWD=$PWD
 _bd_record >/dev/null 2>&1
