@@ -1,6 +1,6 @@
 # back-directory (bd)
 
-A zsh/bash wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
+A bash/zsh wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
 
 ## Getting started
 
@@ -8,7 +8,7 @@ A zsh/bash wrapper plus a Rust core for fast, correct directory backtracking wit
 
 ## Usage
 
-```zsh
+```sh
 bd       # same as: bd 1
 bd 3     # go back 3 directories (1 <= N <= 999)
 bd c     # cancel the last bd command in the current session
@@ -23,16 +23,16 @@ commands, but any other directory move clears that undo history.
 
 #### Recommended: one-liner (GitHub Releases)
 
-```zsh
+```sh
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh | sh
 ```
 
 This installs the core binary to `${XDG_BIN_HOME:-$HOME/.local/bin}`, wrappers to
-`${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh` and
-`${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash`, and adds `source` lines to
-`.zshrc` / `.bashrc`. If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on `PATH`, add:
+`${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash` and
+`${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zsh`, and adds `source` lines to
+`.bashrc` / `.zshrc`. If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on `PATH`, add:
 
-```zsh
+```sh
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
@@ -45,7 +45,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 2) Extract and install:
 
-```zsh
+```sh
 mkdir -p ~/.local/bin
 tar -xzf bd-core-<target>.tar.gz
 mv bd-core ~/.local/bin/bd-core
@@ -53,11 +53,11 @@ mv bd-core ~/.local/bin/bd-core
 
 #### Wrapper configuration
 
-Start a new shell or `source ~/.zshrc` / `source ~/.bashrc`.
+Start a new shell or `source ~/.bashrc` / `source ~/.zshrc`.
 
 If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 
-```zsh
+```sh
 export BD_CORE_BIN=/path/to/bd-core
 ```
 
@@ -67,7 +67,7 @@ Uninstall is a manual cleanup of files and shell config changes.
 
 1) Locate the installed binary (the path will be used below):
 
-```zsh
+```sh
 command -v bd
 # or
 which bd
@@ -75,7 +75,7 @@ which bd
 
 2) Remove the binary at the path printed above (examples):
 
-```zsh
+```sh
 rm -f ~/.local/bin/bd
 # or
 sudo rm -f /usr/local/bin/bd
@@ -83,19 +83,19 @@ sudo rm -f /usr/local/bin/bd
 
 3) Remove optional config/state/data if present (only if you created them):
 
-```zsh
+```sh
 rm -rf ~/.config/back-directory
 rm -rf ~/.local/share/back-directory
 rm -rf ~/.cache/back-directory
 ```
 
 4) Revert shell setup changes:
-   - Remove any PATH, alias, or `source .../bd.zsh` / `source .../bd.bash` lines you added to `.zshrc` or `.bashrc`,
+   - Remove any PATH, alias, or `source .../bd.bash` / `source .../bd.zsh` lines you added to `.bashrc` or `.zshrc`,
      then restart your shell.
 
 ## Layout
 
-- scripts/: distribution scripts (install.sh, bd.zsh, bd.bash)
+- scripts/: distribution scripts (install.sh, bd.bash, bd.zsh)
 - src/: Rust implementation (bd-core)
 
 ## Developer guide
