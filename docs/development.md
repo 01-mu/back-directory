@@ -67,6 +67,65 @@ cargo fmt --check && cargo clippy -- -D warnings && cargo test && cargo build --
 To keep `main` healthy, enable branch protection and require the `ci / build-test` job
 to pass before merging.
 
+## SQLite schema
+
+The local state database is created on first use.
+
+### events
+
+Directory-change events captured by the shell hooks.
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| id | INTEGER | PK, AUTOINCREMENT | Monotonic event id. |
+| session_key | TEXT | NOT NULL, DEFAULT '' | Session identifier (TTY+PID by default). |
+| path | TEXT | NOT NULL | Absolute path after the directory change. |
+| ts | INTEGER | NOT NULL | Unix timestamp (seconds). |
+
+Indexes:
+
+- `idx_events_session_id` on `(session_key, id)`
+- `idx_events_ts` on `(ts)`
+
+### sessions
+
+Per-session cursor and last `bd` move state.
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| session_key | TEXT | PK | Session identifier. |
+| cursor_id | INTEGER | NOT NULL | Current event id cursor in `events`. |
+| last_bd_delta | INTEGER | NOT NULL, DEFAULT 0 | Last `bd N` delta used for cancel. |
+| last_bd_from_id | INTEGER | NOT NULL, DEFAULT 0 | Event id before the last `bd` move. |
+| last_bd_to_id | INTEGER | NOT NULL, DEFAULT 0 | Event id after the last `bd` move. |
+| last_bd_armed | INTEGER | NOT NULL, DEFAULT 0 | Cancel toggle (0/1). |
+
+### undo_moves
+
+Stack of cancelable moves.
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| id | INTEGER | PK, AUTOINCREMENT | Monotonic undo id. |
+| session_key | TEXT | NOT NULL | Session identifier. |
+| from_id | INTEGER | NOT NULL | Event id before the move. |
+| to_id | INTEGER | NOT NULL | Event id after the move. |
+
+Indexes:
+
+- `idx_undo_moves_session_id` on `(session_key, id)`
+
+### Data cleanup (events rotation)
+
+To prevent unbounded growth, the `events` table is rotated per session:
+
+- When a session has 10,000+ events, the 10,000th newest event id becomes the rotation cutoff.
+- Events older than the cutoff are deleted, but never past any id still referenced by
+  `sessions` (`cursor_id`, `last_bd_from_id`, `last_bd_to_id`) or `undo_moves` (`from_id`, `to_id`).
+- If there is no cursor/undo state yet, or the session has fewer than 10,000 events,
+  no deletion occurs.
+
+
 ## Notes
 
 - State lives in `~/.local/state/back-directory/bd.sqlite3` (or `$XDG_STATE_HOME`).
