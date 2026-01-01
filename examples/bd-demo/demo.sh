@@ -22,6 +22,7 @@ source "$SCRIPT_DIR/demo-magic.sh"
 TYPE_SPEED=32
 NO_WAIT=true
 PROMPT_TIMEOUT=0
+DEMO_CMD_COLOR="${BOLD}${CYAN}"
 
 pause() {
   sleep "$1"
