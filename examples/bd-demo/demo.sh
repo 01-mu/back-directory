@@ -44,12 +44,16 @@ announce() {
   p "# $1"
 }
 
-show_pwd
-pause 0.7
+announce_first() {
+  p "# $1"
+}
 
-announce "Setting up the demo"
+announce_first "bd: step back through recent directories"
+announce "Building a short history for the demo"
+show_pwd
+pause 0.3
 run_cmd "mkdir -p workspace/project/frontend/app/dashboard/settings/profile workspace/project/frontend/app/dashboard/settings/security workspace/project/backend/src/domain/user workspace/project/backend/src/domain/order workspace/project/infra/envs/prod"
-pause 0.7
+pause 0.4
 
 pe "cd workspace/project"
 _bd_record >/dev/null 2>&1
