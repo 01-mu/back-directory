@@ -53,22 +53,22 @@ announce "Building a short history for the demo"
 show_pwd
 pause 0.3
 run_cmd "mkdir -p workspace/project/frontend/app/dashboard/settings/profile workspace/project/frontend/app/dashboard/settings/security workspace/project/backend/src/domain/user workspace/project/backend/src/domain/order workspace/project/infra/envs/prod"
-pause 0.4
+pause 0.2
 
 pe "cd workspace/project"
 _bd_record >/dev/null 2>&1
-pause 0.4
+pause 0.2
 pe "cd frontend/app/dashboard/settings/profile"
 _bd_record >/dev/null 2>&1
-pause 0.4
+pause 0.2
 show_pwd
-pause 0.7
+pause 0.3
 
 pe "cd ../../../../../infra/envs/prod"
 _bd_record >/dev/null 2>&1
-pause 0.4
+pause 0.2
 show_pwd
-pause 0.7
+pause 0.3
 
 announce "Show bd history"
 show_list
