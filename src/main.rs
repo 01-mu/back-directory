@@ -6,9 +6,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 const BD_MAX_BACK: u32 = 999;
 const BD_DEFAULT_LIST: u32 = 10;
-const CLEANUP_INTERVAL_SECS: i64 = 10 * 24 * 60 * 60;   //  10 days
+const CLEANUP_INTERVAL_SECS: i64 = 10 * 24 * 60 * 60; //  10 days
 const SESSION_RETENTION_SECS: i64 = 180 * 24 * 60 * 60; // 180 days
-const UNDO_RETENTION_SECS: i64 = 90 * 24 * 60 * 60;     //  90 days
+const UNDO_RETENTION_SECS: i64 = 90 * 24 * 60 * 60; //  90 days
 const META_LAST_CLEANUP_KEY: &str = "last_cleanup_at";
 
 #[derive(Parser)]
