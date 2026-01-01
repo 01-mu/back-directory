@@ -74,6 +74,15 @@ If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 export BD_CORE_BIN=/path/to/bd-core
 ```
 
+## Data retention
+
+- State is stored in `~/.local/state/back-directory/bd.sqlite3` (or `$XDG_STATE_HOME`).
+- `events` is rotated per session at 10,000 entries.
+- `sessions` rows are kept for 180 days since last seen.
+- `undo_moves` rows are kept for 90 days since created.
+- Cleanup runs about every 10 days.
+- VACUUM is manual only. Removing the SQLite file resets all history.
+
 ## Uninstall
 
 Uninstall is a manual cleanup of files and shell config changes.

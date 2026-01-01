@@ -6,6 +6,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 const BD_MAX_BACK: u32 = 999;
 const BD_DEFAULT_LIST: u32 = 10;
+const CLEANUP_INTERVAL_SECS: i64 = 10 * 24 * 60 * 60;
+const SESSION_RETENTION_SECS: i64 = 180 * 24 * 60 * 60;
+const UNDO_RETENTION_SECS: i64 = 90 * 24 * 60 * 60;
+const META_LAST_CLEANUP_KEY: &str = "last_cleanup_at";
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -68,6 +72,7 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     }
 
     let mut conn = open_db()?;
+    maybe_run_cleanup(&mut conn, session)?;
     let tx = conn
         .transaction()
         .map_err(|e| format!("bd: db error: {e}"))?;
@@ -81,12 +86,12 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
         .optional()
         .map_err(|e| format!("bd: db error: {e}"))?;
 
+    let now = current_ts();
     let mut latest_id = None;
     if last_path.as_deref() != Some(pwd) {
-        let ts = current_ts();
         tx.execute(
             "INSERT INTO events (session_key, path, ts) VALUES (?1, ?2, ?3)",
-            params![session, pwd, ts],
+            params![session, pwd, now],
         )
         .map_err(|e| format!("bd: db error: {e}"))?;
         latest_id = Some(tx.last_insert_rowid());
@@ -106,10 +111,9 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     let latest_id = match latest_id {
         Some(id) => id,
         None => {
-            let ts = current_ts();
             tx.execute(
                 "INSERT INTO events (session_key, path, ts) VALUES (?1, ?2, ?3)",
-                params![session, pwd, ts],
+                params![session, pwd, now],
             )
             .map_err(|e| format!("bd: db error: {e}"))?;
             tx.last_insert_rowid()
@@ -117,15 +121,16 @@ fn cmd_record(session: &str, pwd: &str) -> Result<(), String> {
     };
 
     tx.execute(
-        "INSERT INTO sessions (session_key, cursor_id, last_bd_delta, last_bd_from_id, last_bd_to_id, last_bd_armed)
-         VALUES (?1, ?2, 0, 0, 0, 0)
+        "INSERT INTO sessions (session_key, cursor_id, last_bd_delta, last_bd_from_id, last_bd_to_id, last_bd_armed, last_seen_at)
+         VALUES (?1, ?2, 0, 0, 0, 0, ?3)
          ON CONFLICT(session_key) DO UPDATE SET
            cursor_id = excluded.cursor_id,
            last_bd_delta = 0,
            last_bd_from_id = 0,
            last_bd_to_id = 0,
-           last_bd_armed = 0",
-        params![session, latest_id],
+           last_bd_armed = 0,
+           last_seen_at = excluded.last_seen_at",
+        params![session, latest_id, now],
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
@@ -149,6 +154,7 @@ fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
     }
 
     let mut conn = open_db()?;
+    maybe_run_cleanup(&mut conn, session)?;
     let tx = conn
         .transaction()
         .map_err(|e| format!("bd: db error: {e}"))?;
@@ -223,22 +229,24 @@ fn cmd_back(session: &str, n: u32, _print_path: bool) -> Result<(), String> {
         }
     };
 
+    let now = current_ts();
     tx.execute(
-        "INSERT INTO sessions (session_key, cursor_id, last_bd_delta, last_bd_from_id, last_bd_to_id, last_bd_armed)
-         VALUES (?1, ?2, ?3, ?4, ?5, 1)
+        "INSERT INTO sessions (session_key, cursor_id, last_bd_delta, last_bd_from_id, last_bd_to_id, last_bd_armed, last_seen_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6)
          ON CONFLICT(session_key) DO UPDATE SET
            cursor_id = excluded.cursor_id,
            last_bd_delta = excluded.last_bd_delta,
            last_bd_from_id = excluded.last_bd_from_id,
            last_bd_to_id = excluded.last_bd_to_id,
-           last_bd_armed = 1",
-        params![session, target_id, actual_steps, cursor_id, target_id],
+           last_bd_armed = 1,
+           last_seen_at = excluded.last_seen_at",
+        params![session, target_id, actual_steps, cursor_id, target_id, now],
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
     tx.execute(
-        "INSERT INTO undo_moves (session_key, from_id, to_id) VALUES (?1, ?2, ?3)",
-        params![session, cursor_id, target_id],
+        "INSERT INTO undo_moves (session_key, from_id, to_id, created_at) VALUES (?1, ?2, ?3, ?4)",
+        params![session, cursor_id, target_id, now],
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
@@ -257,6 +265,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
     }
 
     let mut conn = open_db()?;
+    maybe_run_cleanup(&mut conn, session)?;
     let tx = conn
         .transaction()
         .map_err(|e| format!("bd: db error: {e}"))?;
@@ -295,6 +304,13 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
     if cursor_exists.is_none() {
         cursor_id = latest_id.ok_or_else(|| "bd: no history in this session".to_string())?;
     }
+
+    let now = current_ts();
+    tx.execute(
+        "UPDATE sessions SET last_seen_at = ?1 WHERE session_key = ?2",
+        params![now, session],
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
 
     let mut stmt = tx
         .prepare("SELECT id, path FROM events WHERE session_key = ?1 AND id < ?2 ORDER BY id DESC")
@@ -348,6 +364,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
 
 fn cmd_cancel(session: &str) -> Result<(), String> {
     let mut conn = open_db()?;
+    maybe_run_cleanup(&mut conn, session)?;
     let tx = conn
         .transaction()
         .map_err(|e| format!("bd: db error: {e}"))?;
@@ -380,10 +397,11 @@ fn cmd_cancel(session: &str) -> Result<(), String> {
         _ => return Err("bd: nothing to cancel".to_string()),
     };
 
+    let now = current_ts();
     tx.execute(
-        "UPDATE sessions SET cursor_id = ?1, last_bd_delta = 0, last_bd_from_id = 0, last_bd_to_id = 0, last_bd_armed = 0
-         WHERE session_key = ?2",
-        params![last_bd_from_id, session],
+        "UPDATE sessions SET cursor_id = ?1, last_bd_delta = 0, last_bd_from_id = 0, last_bd_to_id = 0, last_bd_armed = 0,
+         last_seen_at = ?2 WHERE session_key = ?3",
+        params![last_bd_from_id, now, session],
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
@@ -421,19 +439,26 @@ fn open_db() -> Result<Connection, String> {
            last_bd_delta INTEGER NOT NULL DEFAULT 0,
            last_bd_from_id INTEGER NOT NULL DEFAULT 0,
            last_bd_to_id INTEGER NOT NULL DEFAULT 0,
-           last_bd_armed INTEGER NOT NULL DEFAULT 0
+           last_bd_armed INTEGER NOT NULL DEFAULT 0,
+           last_seen_at INTEGER NOT NULL DEFAULT 0
          );
          CREATE TABLE IF NOT EXISTS undo_moves (
            id INTEGER PRIMARY KEY AUTOINCREMENT,
            session_key TEXT NOT NULL,
            from_id INTEGER NOT NULL,
-           to_id INTEGER NOT NULL
+           to_id INTEGER NOT NULL,
+           created_at INTEGER NOT NULL DEFAULT 0
          );
          CREATE INDEX IF NOT EXISTS idx_undo_moves_session_id ON undo_moves(session_key, id);
+         CREATE TABLE IF NOT EXISTS meta (
+           key TEXT PRIMARY KEY,
+           value INTEGER NOT NULL
+         );
          ",
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
+    ensure_schema(&conn)?;
     Ok(conn)
 }
 
@@ -500,6 +525,88 @@ fn rotate_events(tx: &rusqlite::Transaction<'_>, session: &str) -> Result<(), St
     )
     .map_err(|e| format!("bd: db error: {e}"))?;
 
+    Ok(())
+}
+
+fn ensure_schema(conn: &Connection) -> Result<(), String> {
+    ensure_column(
+        conn,
+        "sessions",
+        "last_seen_at",
+        "INTEGER NOT NULL DEFAULT 0",
+    )?;
+    ensure_column(
+        conn,
+        "undo_moves",
+        "created_at",
+        "INTEGER NOT NULL DEFAULT 0",
+    )?;
+    Ok(())
+}
+
+fn ensure_column(conn: &Connection, table: &str, column: &str, definition: &str) -> Result<(), String> {
+    let mut stmt = conn
+        .prepare(&format!("PRAGMA table_info({table})"))
+        .map_err(|e| format!("bd: db error: {e}"))?;
+    let mut rows = stmt
+        .query([])
+        .map_err(|e| format!("bd: db error: {e}"))?;
+    while let Some(row) = rows.next().map_err(|e| format!("bd: db error: {e}"))? {
+        let name: String = row.get(1).map_err(|e| format!("bd: db error: {e}"))?;
+        if name == column {
+            return Ok(());
+        }
+    }
+    conn.execute(
+        &format!("ALTER TABLE {table} ADD COLUMN {column} {definition}"),
+        [],
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
+    Ok(())
+}
+
+fn maybe_run_cleanup(conn: &mut Connection, session: &str) -> Result<(), String> {
+    let now = current_ts();
+    let last_cleanup_at: i64 = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key = ?1",
+            params![META_LAST_CLEANUP_KEY],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("bd: db error: {e}"))?
+        .unwrap_or(0);
+
+    if now.saturating_sub(last_cleanup_at) < CLEANUP_INTERVAL_SECS {
+        return Ok(());
+    }
+
+    let session_cutoff = now - SESSION_RETENTION_SECS;
+    let undo_cutoff = now - UNDO_RETENTION_SECS;
+    let tx = conn
+        .transaction()
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    tx.execute(
+        "DELETE FROM sessions WHERE last_seen_at < ?1 AND session_key != ?2",
+        params![session_cutoff, session],
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
+
+    tx.execute(
+        "DELETE FROM undo_moves WHERE created_at < ?1",
+        params![undo_cutoff],
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
+
+    tx.execute(
+        "INSERT INTO meta (key, value) VALUES (?1, ?2)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        params![META_LAST_CLEANUP_KEY, now],
+    )
+    .map_err(|e| format!("bd: db error: {e}"))?;
+
+    tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
     Ok(())
 }
 
