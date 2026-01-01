@@ -95,5 +95,3 @@ show_pwd
 pause 0.7
 
 pause 1.2
-
-pe "exit"
