@@ -94,4 +94,4 @@ pause 0.4
 show_pwd
 pause 0.7
 
-pause 1.2
+pause 1.8
