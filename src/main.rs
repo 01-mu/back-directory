@@ -327,7 +327,7 @@ fn cmd_list(session: &str, limit: u32) -> Result<(), String> {
     let max_step = lines.iter().map(|(step, _)| *step).max().unwrap_or(0);
     let width = max_step.to_string().len();
     for (step, path) in lines.into_iter().rev() {
-        println!("{:>width$} {}", step, path, width = width);
+        println!("[{:>width$}] {}", step, path, width = width);
     }
 
     Ok(())
