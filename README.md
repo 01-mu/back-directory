@@ -15,8 +15,12 @@ bd c     # cancel the last bd command in the current session
 bd ls    # list recent targets with their N values
 bd ls 5  # list 5 recent targets
 bd doctor # show database status
+bd doctor --integrity # run SQLite integrity check (can be slow)
+bd doctor --json # output machine-readable JSON
 bd optimize # reclaim SQLite DB space (can be slow)
 bd vacuum # reset SQLite DB (deletes all history)
+bd vacuum --yes # skip confirmation prompt (deletes all history)
+bd h     # show help
 ```
 
 `bd ls` numbers match the `N` you pass to `bd`. `bd c` repeats to undo multiple `bd`
@@ -32,6 +36,13 @@ Warning: `bd vacuum` deletes all history. Use with care.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh | sh
+```
+
+If you prefer to inspect the script first:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh -o install.sh
+sh ./install.sh
 ```
 
 This installs the core binary to `${XDG_BIN_HOME:-$HOME/.local/bin}`, wrappers to
