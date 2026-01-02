@@ -9,6 +9,10 @@ Semantic Versioning.
 
 - Add notes for upcoming releases here.
 
+## [0.1.1] - 2026-01-02
+
+- Fix bash wrapper always showing help due to a malformed test.
+
 ## [0.1.0] - 2024-01-02
 
 - Initial public release.
