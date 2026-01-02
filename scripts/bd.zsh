@@ -94,12 +94,23 @@ bd() {
     cat <<'EOF'
 usage: bd [N|c|ls|doctor|h]
 
-  bd           go back 1 directory
-  bd N         go back N directories (1 <= N <= 999)
-  bd c         cancel the last bd command
-  bd ls [N]    list recent targets with their N values (default 10)
-  bd doctor    show database status
-  bd h         show this help
+Commands:
+  bd                 go back 1 directory
+  bd N               go back N directories (1 <= N <= 999)
+  bd c               cancel the last bd command
+  bd ls [N]          list recent targets with their N values (default 10)
+  bd doctor [opts]   show database status
+  bd h               show this help
+
+Aliases:
+  bd cancel          same as: bd c
+  bd list [N]        same as: bd ls [N]
+  bd help            same as: bd h
+  bd -h, bd --help   show this help
+
+Doctor options:
+  --full             run integrity check
+  --json             output machine-readable JSON
 EOF
     return 0
   fi
