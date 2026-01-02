@@ -1,10 +1,11 @@
-# Maintenance: optimize and doctor
+# Maintenance: optimize, vacuum, and doctor
 
 This note documents best practices for database maintenance.
 
 ## Principles
 
 - `optimize` is manual only. Do not run it automatically.
+- `vacuum` deletes all history and resets the SQLite DB.
 - `doctor` is read-only by default; it should not change user data.
 - Prefer predictable, low-impact checks for daily use.
 
@@ -21,6 +22,16 @@ You can run optimize via the CLI (it runs SQLite `VACUUM` internally):
 
 ```sh
 bd optimize
+```
+
+## vacuum best practices
+
+- Use only when you want to reset all history.
+- This deletes the SQLite DB file (and WAL/SHM side files).
+- The CLI will prompt for confirmation.
+
+```sh
+bd vacuum
 ```
 
 

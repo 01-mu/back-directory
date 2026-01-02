@@ -52,6 +52,12 @@ enum Commands {
         json: bool,
     },
     Optimize,
+    Vacuum {
+        #[arg(long)]
+        yes: bool,
+        #[arg(long)]
+        y: bool,
+    },
 }
 
 fn main() {
@@ -67,6 +73,7 @@ fn main() {
         Commands::Cancel { session } => cmd_cancel(&session),
         Commands::Doctor { integrity, json } => cmd_doctor(integrity, json),
         Commands::Optimize => cmd_optimize(),
+        Commands::Vacuum { yes, y } => cmd_vacuum(yes || y),
     };
 
     if let Err(msg) = result {
@@ -789,6 +796,28 @@ fn cmd_optimize() -> Result<(), String> {
     conn.execute_batch("VACUUM;")
         .map_err(|e| format!("bd: db error: {e}"))?;
     Ok(())
+}
+
+fn cmd_vacuum(yes: bool) -> Result<(), String> {
+    if !yes {
+        return Err("bd: vacuum requires --yes (this deletes all history)".to_string());
+    }
+    let path = db_path()?;
+    remove_file_if_exists(&path)?;
+    let wal_path = PathBuf::from(format!("{}-wal", path.display()));
+    let shm_path = PathBuf::from(format!("{}-shm", path.display()));
+    remove_file_if_exists(&wal_path)?;
+    remove_file_if_exists(&shm_path)?;
+    let _ = open_db()?;
+    Ok(())
+}
+
+fn remove_file_if_exists(path: &Path) -> Result<(), String> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(err) => Err(format!("bd: db error: {err}")),
+    }
 }
 
 fn file_size(path: &Path) -> Option<u64> {

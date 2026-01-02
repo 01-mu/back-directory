@@ -16,6 +16,7 @@ bd ls    # list recent targets with their N values
 bd ls 5  # list 5 recent targets
 bd doctor # show database status
 bd optimize # reclaim SQLite DB space (can be slow)
+bd vacuum # reset SQLite DB (deletes all history)
 ```
 
 `bd ls` numbers match the `N` you pass to `bd`. `bd c` repeats to undo multiple `bd`

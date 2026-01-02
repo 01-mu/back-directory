@@ -92,7 +92,7 @@ bd() {
 
   if [[ $arg == "h" || $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
     cat <<'EOF'
-usage: bd [N|c|ls|doctor|optimize|h]
+usage: bd [N|c|ls|doctor|optimize|vacuum|h]
 
 Commands:
   bd                 go back 1 directory
@@ -101,6 +101,7 @@ Commands:
   bd ls [N]          list recent targets with their N values (default 10)
   bd doctor [opts]   show database status
   bd optimize        rebuild SQLite DB to reclaim space (can be slow)
+  bd vacuum          reset SQLite DB (deletes all history)
   bd h               show this help
 
 Aliases:
@@ -109,9 +110,10 @@ Aliases:
   bd help            same as: bd h
   bd -h, bd --help   show this help
 
-Doctor options:
-  --integrity        run SQLite integrity check (can be slow)
-  --json             output machine-readable JSON
+Options:
+  bd doctor --integrity   run SQLite integrity check (can be slow)
+  bd doctor --json        output machine-readable JSON
+  bd vacuum --yes|--y     skip confirmation prompt (deletes all history)
 
 Note:
   back-directory uses a local SQLite database.
@@ -129,6 +131,22 @@ EOF
   if [[ $arg == "optimize" ]]; then
     _bd_require_core || return 1
     "$BD_CORE_BIN" optimize || return $?
+    return 0
+  fi
+
+  if [[ $arg == "vacuum" ]]; then
+    _bd_require_core || return 1
+    if (( $# >= 2 )) && [[ ${2-} == "--yes" || ${2-} == "--y" ]]; then
+      "$BD_CORE_BIN" vacuum --yes || return $?
+      return $?
+    fi
+    printf '%s' "bd: vacuum deletes all history. Continue? [y/N] "
+    local reply
+    read -r reply
+    if [[ $reply != "y" && $reply != "Y" ]]; then
+      return 1
+    fi
+    "$BD_CORE_BIN" vacuum --yes || return $?
     return 0
   fi
 
