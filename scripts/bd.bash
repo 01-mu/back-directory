@@ -100,7 +100,7 @@ bd() {
     arg=1
   fi
 
-  if [[ $arg=="h" || $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
+  if [[ $arg == "h" || $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
     cat <<'EOF'
 usage: bd [N|c|ls|doctor|optimize|vacuum|h]
 
