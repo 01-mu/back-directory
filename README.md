@@ -2,6 +2,8 @@
 
 A bash/zsh wrapper with a Rust core that records directory navigation history in SQLite to support correct directory backtracking.
 
+Early-stage note: behaviors may change between releases. Currently supported shells: bash, zsh (v0.1.0).
+
 ## Getting started
 
 ![back-directory demo](examples/bd-demo/media/bd-demo.webp)
@@ -52,6 +54,15 @@ If `${XDG_BIN_HOME:-$HOME/.local/bin}` is not on `PATH`, add:
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+#### What changes on your machine
+
+- Downloads the release asset `bd-core-<target>.tar.gz` and wrapper scripts from `scripts/bd.bash` and `scripts/bd.zsh`.
+- Places the core binary at `${XDG_BIN_HOME:-$HOME/.local/bin}/bd-core`.
+- Writes wrapper files to `${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash` and `bd.zsh`.
+- Appends a `source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.*"` line to `$BASHRC` and `$ZSHRC`
+  (defaults to `~/.bashrc` and `~/.zshrc`; creates the files if missing).
+- To opt out, use the manual install steps below and add the `source` line yourself.
+
 #### Manual download
 
 1) Download the matching `.tar.gz` for your OS/arch from the latest GitHub Release:
@@ -85,6 +96,17 @@ If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 export BD_CORE_BIN=/path/to/bd-core
 ```
 
+Checksums (planned): future releases will publish SHA256 sums for verification.
+
+## Data and privacy
+
+`bd` stores local state in SQLite to support session-scoped backtracking and undo:
+
+- Data stored: directory paths, timestamps, session id, and undo/cancel bookkeeping (from/to ids).
+- Location: `${XDG_STATE_HOME:-$HOME/.local/state}/back-directory/bd.sqlite3`
+  (SQLite may also create `bd.sqlite3-wal` and `bd.sqlite3-shm`).
+- No external telemetry or network calls from the core binary.
+
 ## Uninstall
 
 Uninstall is a manual cleanup of files and shell config changes.
@@ -105,18 +127,20 @@ rm -f ~/.local/bin/bd-core
 sudo rm -f /usr/local/bin/bd
 ```
 
-3) Remove optional config/state/data if present (only if you created them):
+3) Remove local state/database files (if present):
 
 ```sh
-rm -rf ~/.config/back-directory
-rm -rf ~/.local/state/back-directory
-rm -rf ~/.local/share/back-directory
-rm -rf ~/.cache/back-directory
+rm -f "${XDG_STATE_HOME:-$HOME/.local/state}/back-directory/bd.sqlite3"
+rm -f "${XDG_STATE_HOME:-$HOME/.local/state}/back-directory/bd.sqlite3-wal"
+rm -f "${XDG_STATE_HOME:-$HOME/.local/state}/back-directory/bd.sqlite3-shm"
+rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory"
 ```
 
 4) Revert shell setup changes:
    - Remove any PATH, alias, or `source .../bd.bash` / `source .../bd.zsh` lines you added to `.bashrc` or `.zshrc`,
      then restart your shell.
+
+Disable temporarily: comment out the `source .../bd.*` line in your shell rc file and reload your shell.
 
 ## Why bd (vs `cd -`, `pushd` / `popd`)
 
