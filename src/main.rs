@@ -3,6 +3,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 use std::env;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 const BD_MAX_BACK: u32 = 999;
 const BD_DEFAULT_LIST: u32 = 10;
@@ -692,9 +693,10 @@ fn cmd_doctor(full: bool, json: bool) -> Result<(), String> {
         } else {
             None
         };
+        let last_cleanup_rfc3339 = format_ts(last_cleanup_at);
 
         println!(
-            "{{\"database\":\"{db_path}\",\"db_size_bytes\":{db_size},\"wal_size_bytes\":{wal_size},\"shm_size_bytes\":{shm_size},\"page_count\":{page_count},\"freelist_count\":{freelist_count},\"page_size\":{page_size},\"events\":{events},\"sessions\":{sessions},\"undo_moves\":{undo},\"last_cleanup_at\":{last_cleanup_at},\"last_cleanup_age_days\":{last_cleanup_age},{integrity}}}",
+            "{{\"database\":\"{db_path}\",\"db_size_bytes\":{db_size},\"wal_size_bytes\":{wal_size},\"shm_size_bytes\":{shm_size},\"page_count\":{page_count},\"freelist_count\":{freelist_count},\"page_size\":{page_size},\"events\":{events},\"sessions\":{sessions},\"undo_moves\":{undo},\"last_cleanup_at\":{last_cleanup_at},\"last_cleanup_at_rfc3339\":{last_cleanup_rfc3339},\"last_cleanup_age_days\":{last_cleanup_age},{integrity}}}",
             db_path = db_path_json,
             db_size = db_size.map_or("null".to_string(), |v| v.to_string()),
             wal_size = wal_size.map_or("null".to_string(), |v| v.to_string()),
@@ -706,35 +708,47 @@ fn cmd_doctor(full: bool, json: bool) -> Result<(), String> {
             sessions = sessions_count,
             undo = undo_count,
             last_cleanup_at = last_cleanup_at,
+            last_cleanup_rfc3339 = last_cleanup_rfc3339
+                .map(|v| format!("\"{}\"", json_escape(&v)))
+                .unwrap_or_else(|| "null".to_string()),
             last_cleanup_age = last_cleanup_age_days.map_or("null".to_string(), |v| v.to_string()),
             integrity = integrity_json.map_or(String::new(), |v| format!(",\"integrity_check\":{v}")),
         );
         return Ok(());
     }
 
-    println!("database: {}", path.display());
+    println!("sqlite.database");
+    println!("  path: {}", path.display());
     if let Some(size) = db_size {
-        println!("size: {} ({} bytes)", format_bytes(size), size);
+        println!("  size: {} ({} bytes)", format_bytes(size), size);
     } else {
-        println!("size: unknown");
+        println!("  size: unknown");
     }
-    if let Some(size) = wal_size {
-        println!("wal: {} ({} bytes)", format_bytes(size), size);
+    if wal_size.is_some() || shm_size.is_some() {
+        println!("sqlite.wal");
+        if let Some(size) = wal_size {
+            println!("  size: {} ({} bytes)", format_bytes(size), size);
+        }
+        if let Some(size) = shm_size {
+            println!("  shm size: {} ({} bytes)", format_bytes(size), size);
+        }
     }
-    if let Some(size) = shm_size {
-        println!("shm: {} ({} bytes)", format_bytes(size), size);
-    }
-    println!("page_count: {page_count}");
-    println!("freelist_count: {freelist_count}");
-    println!("page_size: {page_size}");
-    println!("events: {events_count}");
-    println!("sessions: {sessions_count}");
-    println!("undo_moves: {undo_count}");
+    println!("sqlite.stats");
+    println!("  page_count: {page_count}");
+    println!("  freelist_count: {freelist_count}");
+    println!("  page_size: {page_size}");
+    println!("app.tables");
+    println!("  events: {events_count}");
+    println!("  sessions: {sessions_count}");
+    println!("  undo_moves: {undo_count}");
     if last_cleanup_at > 0 {
         let age_days = (now - last_cleanup_at) / 86_400;
-        println!("last_cleanup_at: {last_cleanup_at} ({age_days} days ago)");
+        let formatted = format_ts(last_cleanup_at).unwrap_or_else(|| "unknown".to_string());
+        println!("cleanup");
+        println!("  last_cleanup_at: {formatted} ({age_days} days ago)");
     } else {
-        println!("last_cleanup_at: never");
+        println!("cleanup");
+        println!("  last_cleanup_at: never");
     }
     if let Some(rows) = integrity {
         if rows.len() == 1 && rows[0] == "ok" {
@@ -771,6 +785,15 @@ fn format_bytes(bytes: u64) -> String {
 
 fn json_escape(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn format_ts(ts: i64) -> Option<String> {
+    if ts <= 0 {
+        return None;
+    }
+    OffsetDateTime::from_unix_timestamp(ts)
+        .ok()
+        .and_then(|dt| dt.format(&Rfc3339).ok())
 }
 
 fn current_ts() -> i64 {
