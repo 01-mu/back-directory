@@ -28,12 +28,10 @@ Warning: `bd vacuum` deletes all history. Use with care.
 
 #### Recommended: install.sh
 
-1) Download `install.sh` from this repository.
-
-2) Run it:
+1) Run the installer directly from GitHub:
 
 ```sh
-sh ./install.sh
+curl -fsSL https://raw.githubusercontent.com/01-mu/back-directory/main/scripts/install.sh | sh
 ```
 
 This installs the core binary to `${XDG_BIN_HOME:-$HOME/.local/bin}`, wrappers to
@@ -100,10 +98,10 @@ command -v bd
 which bd
 ```
 
-2) Remove the binary at the path printed above (examples):
+2) Remove the core binary at the path printed above (examples):
 
 ```sh
-rm -f ~/.local/bin/bd
+rm -f ~/.local/bin/bd-core
 # or
 sudo rm -f /usr/local/bin/bd
 ```
@@ -112,6 +110,7 @@ sudo rm -f /usr/local/bin/bd
 
 ```sh
 rm -rf ~/.config/back-directory
+rm -rf ~/.local/state/back-directory
 rm -rf ~/.local/share/back-directory
 rm -rf ~/.cache/back-directory
 ```
