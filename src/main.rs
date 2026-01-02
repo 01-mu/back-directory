@@ -47,7 +47,7 @@ enum Commands {
     },
     Doctor {
         #[arg(long)]
-        full: bool,
+        integrity: bool,
         #[arg(long)]
         json: bool,
     },
@@ -64,7 +64,7 @@ fn main() {
         } => cmd_back(&session, n, print_path),
         Commands::List { session, limit } => cmd_list(&session, limit),
         Commands::Cancel { session } => cmd_cancel(&session),
-        Commands::Doctor { full, json } => cmd_doctor(full, json),
+        Commands::Doctor { integrity, json } => cmd_doctor(integrity, json),
     };
 
     if let Err(msg) = result {
@@ -621,7 +621,7 @@ fn maybe_run_cleanup(conn: &mut Connection, session: &str) -> Result<(), String>
     Ok(())
 }
 
-fn cmd_doctor(full: bool, json: bool) -> Result<(), String> {
+fn cmd_doctor(integrity: bool, json: bool) -> Result<(), String> {
     let conn = open_db()?;
     let path = db_path()?;
     let db_size = file_size(&path);
@@ -660,7 +660,7 @@ fn cmd_doctor(full: bool, json: bool) -> Result<(), String> {
         .map_err(|e| format!("bd: db error: {e}"))?
         .unwrap_or(0);
 
-    let integrity = if full {
+    let integrity = if integrity {
         let mut stmt = conn
             .prepare("PRAGMA integrity_check")
             .map_err(|e| format!("bd: db error: {e}"))?;

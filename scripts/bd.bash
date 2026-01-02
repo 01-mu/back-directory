@@ -119,7 +119,7 @@ Aliases:
   bd -h, bd --help   show this help
 
 Doctor options:
-  --full             run integrity check
+  --integrity        run DB integrity check (can be slow)
   --json             output machine-readable JSON
 EOF
     return 0
