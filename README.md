@@ -120,6 +120,12 @@ rm -rf ~/.cache/back-directory
 - scripts/: distribution scripts (install.sh, bd.bash, bd.zsh)
 - src/: Rust implementation (bd-core)
 
+## Docs
+
+- `docs/development.md`: development setup and internals
+- `docs/dataflow.md`: SQLite dataflow and cleanup lifecycle
+- `docs/maintenance.md`: VACUUM and doctor best practices
+
 ## Developer guide
 
 See `docs/development.md` for development setup, local debugging, and implementation
