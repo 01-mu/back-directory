@@ -22,6 +22,8 @@ bd vacuum # reset SQLite DB (deletes all history)
 `bd ls` numbers match the `N` you pass to `bd`. `bd c` repeats to undo multiple `bd`
 commands, but any other directory move clears that undo history.
 
+Warning: `bd vacuum` deletes all history. Use with care.
+
 ## Install
 
 #### Recommended: install.sh
