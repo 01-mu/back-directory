@@ -22,8 +22,9 @@ sqlite3 ~/.local/state/back-directory/bd.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE
 
 - Default to quick checks (counts, size, freelist, last cleanup).
 - Provide `--full` to include `PRAGMA integrity_check;`.
+- Use `bd doctor --json` for machine-readable output.
 - Surface clear OK/WARN thresholds, for example:
-  - `freelist_count / page_count >= 0.2` → suggest VACUUM.
+  - `freelist_count / page_count >= 0.2` → suggest vacuum.
   - `last_cleanup_at` older than 30 days → suggest cleanup check.
 
 ## Notes

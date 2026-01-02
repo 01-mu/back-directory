@@ -44,6 +44,12 @@ enum Commands {
         #[arg(long)]
         session: String,
     },
+    Doctor {
+        #[arg(long)]
+        full: bool,
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 fn main() {
@@ -57,6 +63,7 @@ fn main() {
         } => cmd_back(&session, n, print_path),
         Commands::List { session, limit } => cmd_list(&session, limit),
         Commands::Cancel { session } => cmd_cancel(&session),
+        Commands::Doctor { full, json } => cmd_doctor(full, json),
     };
 
     if let Err(msg) = result {
@@ -611,6 +618,159 @@ fn maybe_run_cleanup(conn: &mut Connection, session: &str) -> Result<(), String>
 
     tx.commit().map_err(|e| format!("bd: db error: {e}"))?;
     Ok(())
+}
+
+fn cmd_doctor(full: bool, json: bool) -> Result<(), String> {
+    let conn = open_db()?;
+    let path = db_path()?;
+    let db_size = file_size(&path);
+    let wal_path = PathBuf::from(format!("{}-wal", path.display()));
+    let shm_path = PathBuf::from(format!("{}-shm", path.display()));
+    let wal_size = file_size(&wal_path);
+    let shm_size = file_size(&shm_path);
+
+    let page_count: i64 = conn
+        .query_row("PRAGMA page_count", [], |row| row.get(0))
+        .map_err(|e| format!("bd: db error: {e}"))?;
+    let freelist_count: i64 = conn
+        .query_row("PRAGMA freelist_count", [], |row| row.get(0))
+        .map_err(|e| format!("bd: db error: {e}"))?;
+    let page_size: i64 = conn
+        .query_row("PRAGMA page_size", [], |row| row.get(0))
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let events_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM events", [], |row| row.get(0))
+        .map_err(|e| format!("bd: db error: {e}"))?;
+    let sessions_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM sessions", [], |row| row.get(0))
+        .map_err(|e| format!("bd: db error: {e}"))?;
+    let undo_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM undo_moves", [], |row| row.get(0))
+        .map_err(|e| format!("bd: db error: {e}"))?;
+
+    let last_cleanup_at: i64 = conn
+        .query_row(
+            "SELECT value FROM meta WHERE key = ?1",
+            params![META_LAST_CLEANUP_KEY],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("bd: db error: {e}"))?
+        .unwrap_or(0);
+
+    let integrity = if full {
+        let mut stmt = conn
+            .prepare("PRAGMA integrity_check")
+            .map_err(|e| format!("bd: db error: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|e| format!("bd: db error: {e}"))?;
+        let mut results = Vec::new();
+        for row in rows {
+            results.push(row.map_err(|e| format!("bd: db error: {e}"))?);
+        }
+        Some(results)
+    } else {
+        None
+    };
+
+    let now = current_ts();
+    if json {
+        let db_path_json = json_escape(&path.to_string_lossy());
+        let integrity_json = integrity.as_ref().map(|rows| {
+            format!(
+                "[{}]",
+                rows.iter()
+                    .map(|r| format!("\"{}\"", json_escape(r)))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            )
+        });
+        let last_cleanup_age_days = if last_cleanup_at > 0 {
+            Some((now - last_cleanup_at) / 86_400)
+        } else {
+            None
+        };
+
+        println!(
+            "{{\"database\":\"{db_path}\",\"db_size_bytes\":{db_size},\"wal_size_bytes\":{wal_size},\"shm_size_bytes\":{shm_size},\"page_count\":{page_count},\"freelist_count\":{freelist_count},\"page_size\":{page_size},\"events\":{events},\"sessions\":{sessions},\"undo_moves\":{undo},\"last_cleanup_at\":{last_cleanup_at},\"last_cleanup_age_days\":{last_cleanup_age},{integrity}}}",
+            db_path = db_path_json,
+            db_size = db_size.map_or("null".to_string(), |v| v.to_string()),
+            wal_size = wal_size.map_or("null".to_string(), |v| v.to_string()),
+            shm_size = shm_size.map_or("null".to_string(), |v| v.to_string()),
+            page_count = page_count,
+            freelist_count = freelist_count,
+            page_size = page_size,
+            events = events_count,
+            sessions = sessions_count,
+            undo = undo_count,
+            last_cleanup_at = last_cleanup_at,
+            last_cleanup_age = last_cleanup_age_days.map_or("null".to_string(), |v| v.to_string()),
+            integrity = integrity_json.map_or(String::new(), |v| format!(",\"integrity_check\":{v}")),
+        );
+        return Ok(());
+    }
+
+    println!("database: {}", path.display());
+    if let Some(size) = db_size {
+        println!("size: {} ({} bytes)", format_bytes(size), size);
+    } else {
+        println!("size: unknown");
+    }
+    if let Some(size) = wal_size {
+        println!("wal: {} ({} bytes)", format_bytes(size), size);
+    }
+    if let Some(size) = shm_size {
+        println!("shm: {} ({} bytes)", format_bytes(size), size);
+    }
+    println!("page_count: {page_count}");
+    println!("freelist_count: {freelist_count}");
+    println!("page_size: {page_size}");
+    println!("events: {events_count}");
+    println!("sessions: {sessions_count}");
+    println!("undo_moves: {undo_count}");
+    if last_cleanup_at > 0 {
+        let age_days = (now - last_cleanup_at) / 86_400;
+        println!("last_cleanup_at: {last_cleanup_at} ({age_days} days ago)");
+    } else {
+        println!("last_cleanup_at: never");
+    }
+    if let Some(rows) = integrity {
+        if rows.len() == 1 && rows[0] == "ok" {
+            println!("integrity_check: ok");
+        } else {
+            println!("integrity_check:");
+            for line in rows {
+                println!("- {line}");
+            }
+        }
+    }
+    Ok(())
+}
+
+fn file_size(path: &Path) -> Option<u64> {
+    std::fs::metadata(path).ok().map(|meta| meta.len())
+}
+
+fn format_bytes(bytes: u64) -> String {
+    const KB: f64 = 1024.0;
+    const MB: f64 = 1024.0 * 1024.0;
+    const GB: f64 = 1024.0 * 1024.0 * 1024.0;
+    let value = bytes as f64;
+    if value >= GB {
+        format!("{:.2} GiB", value / GB)
+    } else if value >= MB {
+        format!("{:.2} MiB", value / MB)
+    } else if value >= KB {
+        format!("{:.2} KiB", value / KB)
+    } else {
+        format!("{bytes} B")
+    }
+}
+
+fn json_escape(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 fn current_ts() -> i64 {

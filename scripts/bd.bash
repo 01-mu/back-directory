@@ -102,13 +102,21 @@ bd() {
 
   if [[ $arg=="h" || $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
     cat <<'EOF'
-usage: bd [N|c|ls|help]
+usage: bd [N|c|ls|doctor|help]
 
   bd           go back 1 directory
   bd N         go back N directories (1 <= N <= 999)
   bd c         cancel the last bd command
   bd ls [N]    list recent targets with their N values (default 10)
+  bd doctor    show database status
 EOF
+    return 0
+  fi
+
+  if [[ $arg == "doctor" ]]; then
+    shift
+    _bd_require_core || return 1
+    "$BD_CORE_BIN" doctor "$@" || return $?
     return 0
   fi
 
