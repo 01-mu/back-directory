@@ -88,15 +88,6 @@ If the core binary lives elsewhere, set `BD_CORE_BIN` before sourcing:
 export BD_CORE_BIN=/path/to/bd-core
 ```
 
-## Data retention
-
-- State is stored in `~/.local/state/back-directory/bd.sqlite3` (or `$XDG_STATE_HOME`).
-- `events` is rotated per session at 10,000 entries.
-- `sessions` rows are kept for 180 days since last seen.
-- `undo_moves` rows are kept for 90 days since created.
-- Cleanup runs about every 10 days.
-- optimize is manual only. Removing the SQLite file resets all history.
-
 ## Uninstall
 
 Uninstall is a manual cleanup of files and shell config changes.
@@ -130,6 +121,19 @@ rm -rf ~/.cache/back-directory
    - Remove any PATH, alias, or `source .../bd.bash` / `source .../bd.zsh` lines you added to `.bashrc` or `.zshrc`,
      then restart your shell.
 
+## Why bd (vs `cd -`, `pushd` / `popd`)
+
+`bd` is not a replacement for `cd -` or `pushd` / `popd`. It focuses on two things:
+**session-scoped backtracking** and **safe single-step cancel**.
+
+- `cd -`: only toggles the last directory; no real history to walk
+- `pushd` / `popd`: requires manual stack management; not as natural for quick backtracking
+- `bd`: keeps session history so `bd N` can jump back any number of steps, and `bd c` safely
+  cancels just the last `bd` move
+
+In short, `bd` complements existing commands by making session history navigable and making
+backtracking reversible.
+
 ## Layout
 
 - scripts/: distribution scripts (install.sh, bd.bash, bd.zsh)
@@ -140,8 +144,3 @@ rm -rf ~/.cache/back-directory
 - `docs/development.md`: development setup and internals
 - `docs/dataflow.md`: SQLite dataflow and cleanup lifecycle
 - `docs/maintenance.md`: optimize and doctor best practices
-
-## Developer guide
-
-See `docs/development.md` for development setup, local debugging, and implementation
-details.
