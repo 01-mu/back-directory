@@ -99,7 +99,6 @@ usage: bd [N|c|ls|h]
   bd c         cancel the last bd command
   bd ls [N]    list recent targets with their N values (default 10)
   bd h         show this help
-  bd help      alias for bd h
 EOF
     return 0
   fi

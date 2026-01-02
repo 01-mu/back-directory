@@ -100,7 +100,7 @@ bd() {
     arg=1
   fi
 
-  if [[ $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
+  if [[ $arg=="h" || $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
     cat <<'EOF'
 usage: bd [N|c|ls|help]
 
@@ -108,7 +108,6 @@ usage: bd [N|c|ls|help]
   bd N         go back N directories (1 <= N <= 999)
   bd c         cancel the last bd command
   bd ls [N]    list recent targets with their N values (default 10)
-  bd help      show this help
 EOF
     return 0
   fi
