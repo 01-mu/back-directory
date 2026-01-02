@@ -9,6 +9,6 @@ Semantic Versioning.
 
 - Add notes for upcoming releases here.
 
-## [0.1.0] - 2024-01-01
+## [0.1.0] - 2024-01-02
 
 - Initial public release.
