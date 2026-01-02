@@ -1,6 +1,6 @@
 # back-directory (bd)
 
-A bash/zsh wrapper plus a Rust core for fast, correct directory backtracking with a single-step cancel.
+A bash/zsh wrapper with a Rust core that records directory navigation history in SQLite to support correct directory backtracking.
 
 ## Getting started
 
