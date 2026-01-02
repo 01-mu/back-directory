@@ -12,14 +12,11 @@ A bash/zsh wrapper plus a Rust core for fast, correct directory backtracking wit
 bd       # same as: bd 1
 bd 3     # go back 3 directories (1 <= N <= 999)
 bd c     # cancel the last bd command in the current session
-bd ls    # list recent targets with their N values
-bd ls 5  # list 5 recent targets
+bd ls    # list recent targets (default: 10)
+bd ls 5  # list 5 recent targets (1 <= N <= 999)
 bd doctor # show database status
-bd doctor --integrity # run SQLite integrity check (can be slow)
-bd doctor --json # output machine-readable JSON
 bd optimize # reclaim SQLite DB space (can be slow)
 bd vacuum # reset SQLite DB (deletes all history)
-bd vacuum --yes # skip confirmation prompt (deletes all history)
 bd h     # show help
 ```
 
