@@ -109,8 +109,11 @@ Aliases:
   bd -h, bd --help   show this help
 
 Doctor options:
-  --integrity        run DB integrity check (can be slow)
+  --integrity        run SQLite integrity check (can be slow)
   --json             output machine-readable JSON
+
+Note:
+  back-directory uses a local SQLite database.
 EOF
     return 0
   fi
