@@ -102,7 +102,7 @@ bd() {
 
   if [[ $arg=="h" || $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
     cat <<'EOF'
-usage: bd [N|c|ls|doctor|h]
+usage: bd [N|c|ls|doctor|optimize|h]
 
 Commands:
   bd                 go back 1 directory
@@ -110,6 +110,7 @@ Commands:
   bd c               cancel the last bd command
   bd ls [N]          list recent targets with their N values (default 10)
   bd doctor [opts]   show database status
+  bd optimize        rebuild SQLite DB to reclaim space (can be slow)
   bd h               show this help
 
 Aliases:
@@ -132,6 +133,12 @@ EOF
     shift
     _bd_require_core || return 1
     "$BD_CORE_BIN" doctor "$@" || return $?
+    return 0
+  fi
+
+  if [[ $arg == "optimize" ]]; then
+    _bd_require_core || return 1
+    "$BD_CORE_BIN" optimize || return $?
     return 0
   fi
 

@@ -51,6 +51,7 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+    Optimize,
 }
 
 fn main() {
@@ -65,6 +66,7 @@ fn main() {
         Commands::List { session, limit } => cmd_list(&session, limit),
         Commands::Cancel { session } => cmd_cancel(&session),
         Commands::Doctor { integrity, json } => cmd_doctor(integrity, json),
+        Commands::Optimize => cmd_optimize(),
     };
 
     if let Err(msg) = result {
@@ -695,8 +697,14 @@ fn cmd_doctor(integrity: bool, json: bool) -> Result<(), String> {
         };
         let last_cleanup_rfc3339 = format_ts(last_cleanup_at);
 
+        let optimize_recommended = if page_count > 0 {
+            (freelist_count as f64 / page_count as f64) >= 0.2
+        } else {
+            false
+        };
+
         println!(
-            "{{\"database\":\"{db_path}\",\"db_size_bytes\":{db_size},\"wal_size_bytes\":{wal_size},\"shm_size_bytes\":{shm_size},\"page_count\":{page_count},\"freelist_count\":{freelist_count},\"page_size\":{page_size},\"events\":{events},\"sessions\":{sessions},\"undo_moves\":{undo},\"last_cleanup_at\":{last_cleanup_at},\"last_cleanup_at_rfc3339\":{last_cleanup_rfc3339},\"last_cleanup_age_days\":{last_cleanup_age},{integrity}}}",
+            "{{\"database\":\"{db_path}\",\"db_size_bytes\":{db_size},\"wal_size_bytes\":{wal_size},\"shm_size_bytes\":{shm_size},\"page_count\":{page_count},\"freelist_count\":{freelist_count},\"page_size\":{page_size},\"events\":{events},\"sessions\":{sessions},\"undo_moves\":{undo},\"last_cleanup_at\":{last_cleanup_at},\"last_cleanup_at_rfc3339\":{last_cleanup_rfc3339},\"last_cleanup_age_days\":{last_cleanup_age},\"optimize_recommended\":{optimize_recommended},{integrity}}}",
             db_path = db_path_json,
             db_size = db_size.map_or("null".to_string(), |v| v.to_string()),
             wal_size = wal_size.map_or("null".to_string(), |v| v.to_string()),
@@ -712,6 +720,7 @@ fn cmd_doctor(integrity: bool, json: bool) -> Result<(), String> {
                 .map(|v| format!("\"{}\"", json_escape(&v)))
                 .unwrap_or_else(|| "null".to_string()),
             last_cleanup_age = last_cleanup_age_days.map_or("null".to_string(), |v| v.to_string()),
+            optimize_recommended = optimize_recommended,
             integrity = integrity_json.map_or(String::new(), |v| format!(",\"integrity_check\":{v}")),
         );
         return Ok(());
@@ -741,6 +750,18 @@ fn cmd_doctor(integrity: bool, json: bool) -> Result<(), String> {
     println!("  events: {events_count}");
     println!("  sessions: {sessions_count}");
     println!("  undo_moves: {undo_count}");
+    let optimize_recommended = if page_count > 0 {
+        (freelist_count as f64 / page_count as f64) >= 0.2
+    } else {
+        false
+    };
+    if optimize_recommended {
+        println!("optimize");
+        println!("  recommended: yes (can be slow)");
+    } else {
+        println!("optimize");
+        println!("  recommended: no");
+    }
     if last_cleanup_at > 0 {
         let age_days = (now - last_cleanup_at) / 86_400;
         let formatted = format_ts(last_cleanup_at).unwrap_or_else(|| "unknown".to_string());
@@ -760,6 +781,13 @@ fn cmd_doctor(integrity: bool, json: bool) -> Result<(), String> {
             }
         }
     }
+    Ok(())
+}
+
+fn cmd_optimize() -> Result<(), String> {
+    let conn = open_db()?;
+    conn.execute_batch("VACUUM;")
+        .map_err(|e| format!("bd: db error: {e}"))?;
     Ok(())
 }
 
