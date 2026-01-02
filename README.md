@@ -14,6 +14,9 @@ bd 3     # go back 3 directories (1 <= N <= 999)
 bd c     # cancel the last bd command in the current session
 bd ls    # list recent targets with their N values
 bd ls 5  # list 5 recent targets
+bd doctor # show database status
+bd optimize # reclaim SQLite DB space (can be slow)
+bd vacuum # reset SQLite DB (deletes all history)
 ```
 
 `bd ls` numbers match the `N` you pass to `bd`. `bd c` repeats to undo multiple `bd`
@@ -81,7 +84,7 @@ export BD_CORE_BIN=/path/to/bd-core
 - `sessions` rows are kept for 180 days since last seen.
 - `undo_moves` rows are kept for 90 days since created.
 - Cleanup runs about every 10 days.
-- VACUUM is manual only. Removing the SQLite file resets all history.
+- optimize is manual only. Removing the SQLite file resets all history.
 
 ## Uninstall
 
@@ -119,6 +122,12 @@ rm -rf ~/.cache/back-directory
 
 - scripts/: distribution scripts (install.sh, bd.bash, bd.zsh)
 - src/: Rust implementation (bd-core)
+
+## Docs
+
+- `docs/development.md`: development setup and internals
+- `docs/dataflow.md`: SQLite dataflow and cleanup lifecycle
+- `docs/maintenance.md`: optimize and doctor best practices
 
 ## Developer guide
 

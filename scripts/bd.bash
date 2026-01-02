@@ -102,13 +102,61 @@ bd() {
 
   if [[ $arg=="h" || $arg == "help" || $arg == "-h" || $arg == "--help" ]]; then
     cat <<'EOF'
-usage: bd [N|c|ls|help]
+usage: bd [N|c|ls|doctor|optimize|vacuum|h]
 
-  bd           go back 1 directory
-  bd N         go back N directories (1 <= N <= 999)
-  bd c         cancel the last bd command
-  bd ls [N]    list recent targets with their N values (default 10)
+Commands:
+  bd                 go back 1 directory
+  bd N               go back N directories (1 <= N <= 999)
+  bd c               cancel the last bd command
+  bd ls [N]          list recent targets with their N values (default 10)
+  bd doctor [opts]   show database status
+  bd optimize        rebuild SQLite DB to reclaim space (can be slow)
+  bd vacuum          reset SQLite DB (deletes all history)
+  bd h               show this help
+
+Aliases:
+  bd cancel          same as: bd c
+  bd list [N]        same as: bd ls [N]
+  bd help            same as: bd h
+  bd -h, bd --help   show this help
+
+Options:
+  bd doctor --integrity   run SQLite integrity check (can be slow)
+  bd doctor --json        output machine-readable JSON
+  bd vacuum --yes|--y     skip confirmation prompt (deletes all history)
+
+Note:
+  back-directory uses a local SQLite database.
 EOF
+    return 0
+  fi
+
+  if [[ $arg == "doctor" ]]; then
+    shift
+    _bd_require_core || return 1
+    "$BD_CORE_BIN" doctor "$@" || return $?
+    return 0
+  fi
+
+  if [[ $arg == "optimize" ]]; then
+    _bd_require_core || return 1
+    "$BD_CORE_BIN" optimize || return $?
+    return 0
+  fi
+
+  if [[ $arg == "vacuum" ]]; then
+    _bd_require_core || return 1
+    if (( $# >= 2 )) && [[ ${2-} == "--yes" || ${2-} == "--y" ]]; then
+      "$BD_CORE_BIN" vacuum --yes || return $?
+      return $?
+    fi
+    printf '%s' "bd: vacuum deletes all history. Continue? [y/N] "
+    local reply
+    read -r reply
+    if [[ $reply != "y" && $reply != "Y" ]]; then
+      return 1
+    fi
+    "$BD_CORE_BIN" vacuum --yes || return $?
     return 0
   fi
 
