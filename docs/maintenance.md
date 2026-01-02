@@ -17,7 +17,6 @@ This note documents best practices for database maintenance.
 sqlite3 ~/.local/state/back-directory/bd.sqlite3 "PRAGMA wal_checkpoint(TRUNCATE);"
 ```
 
-- If supported, prefer `VACUUM INTO` to a new file and swap after success.
 
 ## doctor best practices
 
