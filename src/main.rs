@@ -710,8 +710,8 @@ fn cmd_doctor(integrity: bool, json: bool) -> Result<(), String> {
             false
         };
 
-        println!(
-            "{{\"database\":\"{db_path}\",\"db_size_bytes\":{db_size},\"wal_size_bytes\":{wal_size},\"shm_size_bytes\":{shm_size},\"page_count\":{page_count},\"freelist_count\":{freelist_count},\"page_size\":{page_size},\"events\":{events},\"sessions\":{sessions},\"undo_moves\":{undo},\"last_cleanup_at\":{last_cleanup_at},\"last_cleanup_at_rfc3339\":{last_cleanup_rfc3339},\"last_cleanup_age_days\":{last_cleanup_age},\"optimize_recommended\":{optimize_recommended},{integrity}}}",
+        let mut payload = format!(
+            "\"database\":\"{db_path}\",\"db_size_bytes\":{db_size},\"wal_size_bytes\":{wal_size},\"shm_size_bytes\":{shm_size},\"page_count\":{page_count},\"freelist_count\":{freelist_count},\"page_size\":{page_size},\"events\":{events},\"sessions\":{sessions},\"undo_moves\":{undo},\"last_cleanup_at\":{last_cleanup_at},\"last_cleanup_at_rfc3339\":{last_cleanup_rfc3339},\"last_cleanup_age_days\":{last_cleanup_age},\"optimize_recommended\":{optimize_recommended}",
             db_path = db_path_json,
             db_size = db_size.map_or("null".to_string(), |v| v.to_string()),
             wal_size = wal_size.map_or("null".to_string(), |v| v.to_string()),
@@ -728,8 +728,11 @@ fn cmd_doctor(integrity: bool, json: bool) -> Result<(), String> {
                 .unwrap_or_else(|| "null".to_string()),
             last_cleanup_age = last_cleanup_age_days.map_or("null".to_string(), |v| v.to_string()),
             optimize_recommended = optimize_recommended,
-            integrity = integrity_json.map_or(String::new(), |v| format!(",\"integrity_check\":{v}")),
         );
+        if let Some(integrity_json) = integrity_json {
+            payload.push_str(&format!(",\"integrity_check\":{integrity_json}"));
+        }
+        println!("{{{payload}}}");
         return Ok(());
     }
 

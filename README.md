@@ -2,7 +2,7 @@
 
 A bash/zsh wrapper with a Rust core that records directory navigation history in SQLite to support correct directory backtracking.
 
-Early-stage note: behaviors may change between releases. Currently supported shells: bash, zsh (v0.1.0).
+Early-stage note: behaviors may change between releases. Currently supported shells: bash, zsh.
 
 ## Getting started
 
@@ -111,12 +111,12 @@ Checksums (planned): future releases will publish SHA256 sums for verification.
 
 Uninstall is a manual cleanup of files and shell config changes.
 
-1) Locate the installed binary (the path will be used below):
+1) Locate the installed core binary (the path will be used below):
 
 ```sh
-command -v bd
+command -v bd-core
 # or
-which bd
+which bd-core
 ```
 
 2) Remove the core binary at the path printed above (examples):
@@ -124,7 +124,7 @@ which bd
 ```sh
 rm -f ~/.local/bin/bd-core
 # or
-sudo rm -f /usr/local/bin/bd
+sudo rm -f /usr/local/bin/bd-core
 ```
 
 3) Remove local state/database files (if present):

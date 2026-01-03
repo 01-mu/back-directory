@@ -82,7 +82,7 @@ canonical_source='source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.zs
 canonical_bash_source='source "${XDG_CONFIG_HOME:-$HOME/.config}/back-directory/bd.bash"'
 
 if [ -f "$ZSHRC" ]; then
-  if ! grep -Eq '^[[:space:]]*[^#].*source[[:space:]]+.*back-directory/bd\.zsh' "$ZSHRC"; then
+  if ! grep -Eq 'back-directory/bd\.zsh' "$ZSHRC"; then
     # Avoid duplicate sourcing when rerunning the installer.
     printf '\n%s\n' "$canonical_source" >> "$ZSHRC"
   fi
@@ -91,7 +91,7 @@ else
 fi
 
 if [ -f "$BASHRC" ]; then
-  if ! grep -Eq '^[[:space:]]*[^#].*source[[:space:]]+.*back-directory/bd\.bash' "$BASHRC"; then
+  if ! grep -Eq 'back-directory/bd\.bash' "$BASHRC"; then
     printf '\n%s\n' "$canonical_bash_source" >> "$BASHRC"
   fi
 else
